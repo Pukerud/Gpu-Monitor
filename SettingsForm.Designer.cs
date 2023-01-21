@@ -48,6 +48,8 @@
             this.label9 = new System.Windows.Forms.Label();
             this.txtCheckTimer = new System.Windows.Forms.TextBox();
             this.txtDobbelCheck = new System.Windows.Forms.TextBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.txtGsheetShare = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // SaveForm
@@ -227,12 +229,33 @@
             this.txtDobbelCheck.Size = new System.Drawing.Size(81, 23);
             this.txtDobbelCheck.TabIndex = 18;
             // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.label10.Location = new System.Drawing.Point(12, 194);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(88, 15);
+            this.label10.TabIndex = 19;
+            this.label10.Text = "RnDr Log Email";
+            this.label10.Click += new System.EventHandler(this.label10_Click);
+            // 
+            // txtGsheetShare
+            // 
+            this.txtGsheetShare.Location = new System.Drawing.Point(114, 186);
+            this.txtGsheetShare.Name = "txtGsheetShare";
+            this.txtGsheetShare.PlaceholderText = "Sheet is shared with this Email";
+            this.txtGsheetShare.Size = new System.Drawing.Size(190, 23);
+            this.txtGsheetShare.TabIndex = 20;
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.ClientSize = new System.Drawing.Size(551, 192);
+            this.ClientSize = new System.Drawing.Size(557, 220);
+            this.Controls.Add(this.txtGsheetShare);
+            this.Controls.Add(this.label10);
             this.Controls.Add(this.txtDobbelCheck);
             this.Controls.Add(this.txtCheckTimer);
             this.Controls.Add(this.label9);
@@ -284,5 +307,7 @@
         private Label label9;
         private TextBox txtCheckTimer;
         private TextBox txtDobbelCheck;
+        private Label label10;
+        private TextBox txtGsheetShare;
     }
 }

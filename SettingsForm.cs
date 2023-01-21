@@ -22,6 +22,7 @@ namespace Simple_Button
         public int EmailTimeout { get; set; }
         public int CheckTimer { get; set; }
         public int DobbelCheck { get; set; }
+        public string GsheetShare { get; set; }
 
         public SettingsForm()
         {
@@ -45,6 +46,7 @@ namespace Simple_Button
             SmtpPassword = txtSmtpPassword.Text;
             MailTo = txtMailTo.Text;
             MailFrom = txtMailFrom.Text;
+            GsheetShare = txtGsheetShare.Text;
             try
             {
                 if (!string.IsNullOrEmpty(txtSmtpServerPort.Text))
@@ -74,6 +76,7 @@ namespace Simple_Button
             // Save the settings to a file or in the registry
             // ...
             RegistryKey key = Registry.CurrentUser.CreateSubKey("Software\\GPUMonitor");
+            key.SetValue("GsheetShare", GsheetShare);
             key.SetValue("SmtpServer", SmtpServer);
             key.SetValue("SmtpServerPort", SmtpServerPort);
             key.SetValue("SmtpUser", SmtpUser);
@@ -124,7 +127,8 @@ namespace Simple_Button
                     txtSmtpUser.Text = SmtpUser;
                     txtSmtpPassword.Text = SmtpPassword;
                     txtMailTo.Text = MailTo;
-                    txtMailFrom.Text = MailFrom;                    
+                    txtMailFrom.Text = MailFrom;
+                    txtGsheetShare.Text = GsheetShare;
                     txtSmtpServer.Text = key.GetValue("SmtpServer").ToString();
                     txtSmtpServerPort.Text = key.GetValue("SmtpServerPort").ToString();
                     txtSmtpUser.Text = key.GetValue("SmtpUser").ToString();
@@ -134,6 +138,7 @@ namespace Simple_Button
                     txtEmailTimeout.Text = key.GetValue("EmailTimeout").ToString();
                     txtCheckTimer.Text = key.GetValue("CheckTimer").ToString();
                     txtDobbelCheck.Text = key.GetValue("DobbelCheck").ToString();
+                    txtGsheetShare.Text = key.GetValue("GsheetShare").ToString();
                 }
             }
         }
@@ -146,6 +151,11 @@ namespace Simple_Button
         private void txtMailFrom_TextChanged(object sender, EventArgs e)
         {
             
+        }
+
+        private void label10_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

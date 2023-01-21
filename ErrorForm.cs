@@ -23,6 +23,11 @@ namespace Simple_Button
         {
             this.Close();
         }
+
+        private void ErrorForm_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 
 }

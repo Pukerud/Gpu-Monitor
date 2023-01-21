@@ -23,9 +23,9 @@ using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
 using GData.Spreadsheets;
 using Spreadsheet = Google.Apis.Sheets.v4.Data.Spreadsheet;
+using System.Text.RegularExpressions;
 
 //using Google.GoogleApiException;
-
 
 namespace Simple_Button
 {
@@ -50,10 +50,11 @@ namespace Simple_Button
         private string? _Subject;
         private int _timeThreshold = 10;
         private int _sleepTime = 9000;
-        private int _sleepTime2 = 60000;        
+        private int _sleepTime2 = 60000;
+        private string? GsheetShare { get; set; }
 
         public MainWindow()
-        {
+        {            
             InitializeComponent();
             this.StartPosition = FormStartPosition.CenterParent;
             this.Text = "Pukerud's GPU Monitor Running On: " + Environment.MachineName;
@@ -79,7 +80,7 @@ namespace Simple_Button
             folders.Enqueue(startingFolder);
 
             while (folders.Count > 0)
-            {
+            {               
                 string currentFolder = folders.Dequeue();
                 string[] files = Directory.GetFiles(currentFolder, fileName);
 
@@ -110,7 +111,7 @@ namespace Simple_Button
         }
 
         private async void button1_Click(object? sender, EventArgs? e)
-        {
+        {                       
             //MessageBox.Show("GPULoad Check Started");            
             _isRunning = true;
             await Task.Run(() => {
@@ -134,9 +135,13 @@ namespace Simple_Button
                         process.WaitForExit();
 
                         var gpuUsage = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                        _gpuCount = gpuUsage.Length;
-                        _highLoadGpuCount = gpuUsage.Count(x => x.Contains("100 %") || x.Contains("8[0-9] %") || x.Contains("9[0-9] %"));
-                        _lowLoadGpuCount = gpuUsage.Count(x => !x.Contains("100 %") && !x.Contains("8[0-9] %") && !x.Contains("9[0-9] %"));
+                        Console.WriteLine(string.Join(",", gpuUsage));                        
+                        _gpuCount = gpuUsage.Length;                        
+                        var highLoadRegex = new Regex(@"^(8[0-9]|9[0-9]|100) %$");
+                        _highLoadGpuCount = gpuUsage.Count(x => highLoadRegex.IsMatch(x));
+                        var lowLoadRegex = new Regex(@"^[0-7][0-9] %$|^0 %$");
+                        _lowLoadGpuCount = gpuUsage.Count(x => !highLoadRegex.IsMatch(x));
+                        Console.WriteLine("highload= "+ _highLoadGpuCount +" Lowload= "+ _lowLoadGpuCount + "ok");
                     }
                     Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU usage on " + _computer + ". Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount);
                     textBox1.Invoke((MethodInvoker)delegate {
@@ -178,15 +183,25 @@ namespace Simple_Button
                             var output = process.StandardOutput.ReadToEnd();
                             process.WaitForExit();
 
-                            var gpuUsage = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            var gpuUsage = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);                            
                             _gpuCount = gpuUsage.Length;
-                            _highLoadGpuCount = gpuUsage.Count(x => x.Contains("100 %") || x.Contains("8[0-9] %") || x.Contains("9[0-9] %"));
-                            _lowLoadGpuCount = gpuUsage.Count(x => !x.Contains("100 %") && !x.Contains("8[0-9] %") && !x.Contains("9[0-9] %"));
+                            Console.WriteLine(string.Join(",", gpuUsage));                            
+                            var highLoadRegex = new Regex(@"^(8[0-9]|9[0-9]|100) %$");                            
+                            _highLoadGpuCount = gpuUsage.Count(x => highLoadRegex.IsMatch(x));                            
+                            var lowLoadRegex = new Regex(@"^[0-7][0-9] %$|^0 %$");                            
+                            _lowLoadGpuCount = gpuUsage.Count(x => !highLoadRegex.IsMatch(x));                            
+                            Console.WriteLine("highload= " + _highLoadGpuCount + " Lowload= " + _lowLoadGpuCount + "ok");
+                            //_highLoadGpuCount = gpuUsage.Count(x => x.Contains("100 %") || x.Contains("8[0-9] %") || x.Contains("9[0-9] %"));
+                            //_lowLoadGpuCount = gpuUsage.Count(x => !x.Contains("100 %") && !x.Contains("8[0-9] %") && !x.Contains("9[0-9] %"));
                         }
-                        Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU usage on " + _computer + ". Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);                       
-                        if (_highLoadGpuCount < 3 && !_emailSent)
-                        {                                                       
-                            textBox1.Invoke((MethodInvoker)delegate {
+                        Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU usage on " + _computer + ". Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
+                        textBox1.Invoke((MethodInvoker)delegate {
+                            textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
+                        });
+                        if (_highLoadGpuCount <= 3 && _lowLoadGpuCount != _gpuCount && !_emailSent) 
+                            {
+                            textBox1.Invoke((MethodInvoker)delegate
+                            {
                                 textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Sending Mail \r\n");
                             });
                             _Subject = "Looks like thing are in a HUNG state at " + _computer;
@@ -194,15 +209,22 @@ namespace Simple_Button
                             SendEmail(_mailTo, _Subject, _Body);
                             _lastSent = DateTime.Now;
                             _emailSent = true;
-
                         }
-                        
+                        else
+                        {
+                            var timerSinceLastEmail = (DateTime.Now - _lastSent).TotalMinutes;
+                            textBox1.Invoke((MethodInvoker)delegate
+                            {
+                                textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU's are fine again or Email is still timed out. " + timeSinceLastEmail.ToString(@"hh\:mm\:ss") + " since last Email \r\n");
+                            });
+                        }
+                                                
                     }
                     System.Threading.Thread.Sleep(_sleepTime * 1000);
                 }
             });
-        }
-
+            
+        }        
         private void Form1_Load(object sender, EventArgs e)
         {
           
@@ -227,14 +249,15 @@ namespace Simple_Button
 
             try
             {
-                using (var client = new SmtpClient(_smtpServer, _emailSmtpServerPort))
+                using (var client = new SmtpClient(_smtpServer, _emailSmtpServerPort))                    
                 {
                     client.EnableSsl = true;
                     client.Credentials = new NetworkCredential(_smtpUser, _smtpPassword);
+                    client.Timeout = 5 * 1000;  // 5 seconds timeout
                     using (var message = new MailMessage(_mailFrom, to, subject, body))
 
                         try
-                        {
+                        {                            
                             client.Send(message);
                         }
                         catch (SmtpException ex)
@@ -256,7 +279,7 @@ namespace Simple_Button
         private void button3_Click(object sender, EventArgs e)
         {
             RetrieveRegistryValues();
-            ErrorForm errorForm = new ErrorForm("If the mail settings are wrong, this is going to be frozen for 100 Seconds");
+            ErrorForm errorForm = new ErrorForm("If the mail settings are wrong, this is going to be frozen for 5 Seconds");
             errorForm.ShowDialog();
             if (!_settingsValid)
             {
@@ -319,7 +342,9 @@ namespace Simple_Button
 
         private void RndrLog_Click(object sender, EventArgs e)
         {
-            AddDataToSheet();
+            ErrorForm errorForm = new ErrorForm("The feature is not implemented yet.");
+            errorForm.ShowDialog();
+            //AddDataToSheet();
 
         }
         public void AddDataToSheet()
@@ -425,6 +450,7 @@ namespace Simple_Button
 
         private string CreateSpreadsheet(SheetsService sheetsService, string spreadsheetName)
         {
+            RetrieveRegistryValues();
             var spreadsheet = new Spreadsheet();
             spreadsheet.Properties = new SpreadsheetProperties();
             spreadsheet.Properties.Title = spreadsheetName;
@@ -441,7 +467,7 @@ namespace Simple_Button
             });
 
             // Set permissions for the creator and an additional email address
-            var emailAddress = "pukerud@gmail.com";
+            var emailAddress = GsheetShare;
             var permission = new Permission
             {
                 Type = "user",
