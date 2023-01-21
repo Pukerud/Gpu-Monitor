@@ -1,9 +1,13 @@
 # Gpu-Monitor
 ![image](https://user-images.githubusercontent.com/35293441/213869750-b99d7018-500b-42bd-8368-315bdbd757ac.png)
 
-My first project is a GPU-Monitor. 
-It uses nvidia-smi so it is only for NVIDIA cards.
-Looks for nvidia-smi under C:\Windows\System32\DriverStore\FileRepository\ and use that.
+My first project is a GPU-Monitor.
+
+REQUIREMENTS:
+.Net Desktop Runtime - Will ask for this when you start the Program.
+It uses nvidia-smi so it is only for NVIDIA cards and Drivers must have been installed.
+
+
 
 Settings is stored in the registry
 Computer\HKEY_CURRENT_USER\Software\GPUMonitor
