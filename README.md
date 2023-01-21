@@ -16,6 +16,7 @@ If there is 3 or less GPU with high GPU load and the rest are lowload (80% or le
 
 Stop Check  
 What do you think? its Stops the check..
+
 Test Mail - Test mail sending with the settings you provide in the Settings dialog.
 
 AutoStart
