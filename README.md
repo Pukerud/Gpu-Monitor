@@ -27,9 +27,9 @@ If you check this, Start Check will be triggered automatically when the Program 
 
 Rndr Log
 
-Not Implemented yet- Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that use current computername.
+Not Implemented yet- Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that uses current computer name.
 Append data to it from the rndr_log based on settings. Then you can create graphs or whatever you want in another sheet base on that data.
-A lot to do here you need to provide your own crednetials file so it can talk to YOUR google cloud. Easy instruction will be made when done.
+A lot to do here you need to provide your own credentials file so it can talk to YOUR google cloud. Easy instruction will be made when done.
 
 ![image](https://user-images.githubusercontent.com/35293441/213871142-44414a3d-c821-436e-a00a-ee799e46bbf3.png)
 
