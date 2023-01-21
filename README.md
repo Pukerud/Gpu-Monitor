@@ -17,13 +17,17 @@ If there is 3 or less GPU with high GPU load and the rest are lowload (80% or le
 Stop Check  
 What do you think? its Stops the check..
 
-Test Mail - Test mail sending with the settings you provide in the Settings dialog.
+Test Mail
+
+Test mail sending with the settings you provide in the Settings dialog.
 
 AutoStart
+
 If you check this, Start Check will be triggered automatically when the Program starts.
 
-Rndr Log - Not Implemented yet 
-Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that use current computername.
+Rndr Log
+
+Not Implemented yet- Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that use current computername.
 Append data to it from the rndr_log based on settings. Then you can create graphs or whatever you want in another sheet base on that data.
 A lot to do here you need to provide your own crednetials file so it can talk to YOUR google cloud. Easy instruction will be made when done.
 
