@@ -22,6 +22,7 @@ Test Mail - Test mail sending with the settings you provide in the Settings dial
 Rndr Log - Not Implemented yet 
 Going to create a Google Spreadsheet, with a Sheet that has the computer name where it is running.
 Append data to it from the rndr_log based on settings. Then you can create graphs or whatever you want in another sheet base on that data.
-![image](https://user-images.githubusercontent.com/35293441/213870527-93b216dc-029f-4ca5-b082-b2507f5eaabd.png)
+![image](https://user-images.githubusercontent.com/35293441/213871142-44414a3d-c821-436e-a00a-ee799e46bbf3.png)
+
 
 
