@@ -24,6 +24,8 @@ using Google.Apis.Drive.v3.Data;
 using GData.Spreadsheets;
 using Spreadsheet = Google.Apis.Sheets.v4.Data.Spreadsheet;
 using System.Text.RegularExpressions;
+using System.Globalization;
+using static System.ComponentModel.Design.ObjectSelectorEditor;
 
 //using Google.GoogleApiException;
 
@@ -190,7 +192,7 @@ namespace Simple_Button
                             _highLoadGpuCount = gpuUsage.Count(x => highLoadRegex.IsMatch(x));                            
                             var lowLoadRegex = new Regex(@"^[0-7][0-9] %$|^0 %$");                            
                             _lowLoadGpuCount = gpuUsage.Count(x => !highLoadRegex.IsMatch(x));                            
-                            Console.WriteLine("highload= " + _highLoadGpuCount + " Lowload= " + _lowLoadGpuCount + "ok");
+                            Console.WriteLine("highload= " + _highLoadGpuCount + " Lowload= " + _lowLoadGpuCount + " ok");
                             //_highLoadGpuCount = gpuUsage.Count(x => x.Contains("100 %") || x.Contains("8[0-9] %") || x.Contains("9[0-9] %"));
                             //_lowLoadGpuCount = gpuUsage.Count(x => !x.Contains("100 %") && !x.Contains("8[0-9] %") && !x.Contains("9[0-9] %"));
                         }
@@ -344,7 +346,7 @@ namespace Simple_Button
         {
             ErrorForm errorForm = new ErrorForm("The feature is not implemented yet.");
             errorForm.ShowDialog();
-            //AddDataToSheet();
+            AddDataToSheet();
 
         }
         public void AddDataToSheet()
@@ -393,16 +395,44 @@ namespace Simple_Button
                 System.Diagnostics.Debug.WriteLine("sheetName: " + sheetName);
             }
 
-                // Add data to the sheet
-                
-            var range = $"{sheetName}!A1";
-            var valueRange = new ValueRange();
-            valueRange.Values = new List<IList<object>> { new List<object> { "RenderTime", "DateTime" } };
-            var appendRequest = service.Spreadsheets.Values.Append(valueRange, spreadsheetId, range);
-            appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
-            appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            var appendResponse = appendRequest.Execute();
+                // Add data to the sheet            
                 var renderTimes = ReadRenderLogFile();
+                foreach (var renderTime in renderTimes)
+                {
+                    var dateTime = renderTime.Item1;
+                    var seconds = renderTime.Item2;
+
+                    // Use the QUERY function to check if the renderTime already exists in the sheet
+                    string queryRange = "A1:B20";
+                    string dataRange = "A:B";
+                    var formattedDateTime = dateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    // WORKING men blir feil :: string query = "=QUERY(" + dataRange + ", \"SELECT * WHERE A = " + formattedDateTime + " AND B = '" + seconds + "'\"";
+                    // WORKING men blir feil :: string query = "=QUERY(A:A, \"SELECT A WHERE A = '53.761002'\")";
+                    string query = "=QUERY(A:A, \"SELECT * WHERE A = '66.626999'\")";
+                    var queryRequest = service.Spreadsheets.Values.Get(spreadsheetId, queryRange);
+                    System.Diagnostics.Debug.WriteLine("queryRequest: " + queryRequest);
+                    System.Diagnostics.Debug.WriteLine("query: " + query);
+                    System.Diagnostics.Debug.WriteLine("queryRange: " + queryRange);
+                    var queryResponse = queryRequest.Execute();
+                    System.Diagnostics.Debug.WriteLine("respons: " + queryResponse);
+                    System.Diagnostics.Debug.WriteLine("respons2: " + queryResponse.Values);
+
+                    if (queryResponse.Values == null || queryResponse.Values.Count == 0)
+                    {
+                        // renderTime doesn't exist in sheet, append it
+                        var range = $"{sheetName}!A1";
+                        var valueRange = new ValueRange();
+                        //valueRange.Values = new List<IList<object>> { new List<object> { seconds, formattedDateTime } };
+                        valueRange.Values = new List<IList<object>> { new List<object> { seconds.ToString(), formattedDateTime } };
+                        var appendRequest = service.Spreadsheets.Values.Append(valueRange, spreadsheetId, range);
+                        appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+                        appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
+                        var appendResponse = appendRequest.Execute();
+                    }
+
+
+                }
+
             }
             catch (GoogleApiException ex)
             {
@@ -514,62 +544,57 @@ namespace Simple_Button
 
             return newSheetId.ToString();
         }
-        private List<Tuple<string, string>> ReadRenderLogFile()
+        private List<Tuple<DateTime, string>> ReadRenderLogFile()
         {
             var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
-            System.Diagnostics.Debug.WriteLine("Renderlogpath: " + renderLogPath);
-            var renderTimes = new List<Tuple<string, string>>();
+            var renderTimes = new List<Tuple<DateTime, string>>();
+
+            // Define a regular expression pattern to match the lines that contain render time
+            string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
             using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new StreamReader(stream))
             {
-                // Seek to the end of the file
-                stream.Seek(0, SeekOrigin.End);
-                var remainingBytes = stream.Length;
-                var lineCount = 0;
-
-                while (remainingBytes > 0 && lineCount < 10)
-                {
-                    // Go back one byte
-                    stream.Seek(-1, SeekOrigin.Current);
-                    remainingBytes--;
-
-                    // Read the byte
-                    var b = (char)stream.ReadByte();
-
-                    // If the byte is a newline character, increment the line count
-                    if (b == '\n')
-                    {
-                        lineCount++;
-                    }
-                }
-
-                // Read the lines
+                var lines = new List<string>();
                 while (!reader.EndOfStream)
                 {
-                    var line = reader.ReadLine();
-                    if (line.Contains("render time"))
+                    lines.Add(reader.ReadLine());
+                }
+                var linesReverse = lines.AsEnumerable().Reverse().Take(20);
+                foreach (var line in linesReverse)
+                {
+                    var match = Regex.Match(line, pattern);
+                    if (match.Success)
                     {
-                        var dateTime = line.Substring(0, 20);
-                            var start = line.IndexOf("time") + 5;
-                            var end = line.IndexOf("seconds") - 1;
-                            var seconds = line.Substring(start, end - start + 1);
-                            renderTimes.Add(Tuple.Create(dateTime, seconds));
-                        }
+                        // Extract the timestamp
+                        var dateTime = match.Groups[1].Value;
+                        System.Diagnostics.Debug.WriteLine("Extracted date time: " + dateTime);
+
+
+                        // Extract the render time
+                        var seconds = match.Groups[2].Value.Replace("render time", "").Trim();
+                        System.Diagnostics.Debug.WriteLine("Extracted seconds: " + seconds);
+                        // Change to DateTime format
+                        
+                        var dateTimeValue = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                        renderTimes.Add(Tuple.Create(dateTimeValue, seconds));
                     }
                 }
+            }
             if (renderTimes.Count == 0)
                 System.Diagnostics.Debug.WriteLine("renderTimes list is empty");
             else
                 foreach (var x in renderTimes)
                 {
-                    System.Diagnostics.Debug.WriteLine(x.Item1 + " " + x.Item2);
-                }       
-             return renderTimes;
+                    System.Diagnostics.Debug.WriteLine("this is item1 and item2 now: "+ x.Item1 + " " + x.Item2);
+                }
+            return renderTimes;
         }
-            
-        
 
 
 
     }
 }
+
+
+    
+
