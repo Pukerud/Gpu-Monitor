@@ -1,6 +1,7 @@
 # Gpu-Monitor
 ![image](https://user-images.githubusercontent.com/35293441/213880927-3b6ae267-28f1-4ba4-b079-83fbcb4eefa0.png)
-![image](https://user-images.githubusercontent.com/35293441/213870025-bcdd3836-7439-47a1-b9e9-f9efdf3c83ee.png)
+![image](https://user-images.githubusercontent.com/35293441/213907017-2e80262b-d385-41a9-9bf4-5f4398326cb9.png)
+
 
 REQUIREMENTS:
 .Net Desktop Runtime - Will ask for this when you start the Program.
