@@ -346,7 +346,7 @@ namespace Simple_Button
         {
             ErrorForm errorForm = new ErrorForm("The feature is not implemented yet.");
             errorForm.ShowDialog();
-            AddDataToSheet();
+            //AddDataToSheet();
 
         }
         public void AddDataToSheet()
