@@ -1,6 +1,7 @@
 # Gpu-Monitor
 ![image](https://user-images.githubusercontent.com/35293441/213880927-3b6ae267-28f1-4ba4-b079-83fbcb4eefa0.png)
-![image](https://user-images.githubusercontent.com/35293441/213870025-bcdd3836-7439-47a1-b9e9-f9efdf3c83ee.png)
+![image](https://user-images.githubusercontent.com/35293441/213907017-2e80262b-d385-41a9-9bf4-5f4398326cb9.png)
+
 
 REQUIREMENTS:
 .Net Desktop Runtime - Will ask for this when you start the Program.
@@ -27,9 +28,9 @@ If you check this, Start Check will be triggered automatically when the Program 
 
 Rndr Log
 
-Not Implemented yet- Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that use current computername.
+Not Implemented yet- Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that uses current computer name.
 Append data to it from the rndr_log based on settings. Then you can create graphs or whatever you want in another sheet base on that data.
-A lot to do here you need to provide your own crednetials file so it can talk to YOUR google cloud. Easy instruction will be made when done.
+A lot to do here you need to provide your own credentials file so it can talk to YOUR google cloud. Easy instruction will be made when done.
 
 ![image](https://user-images.githubusercontent.com/35293441/213871142-44414a3d-c821-436e-a00a-ee799e46bbf3.png)
 
