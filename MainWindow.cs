@@ -235,7 +235,7 @@ namespace Simple_Button
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            // textBox1.Text = "";
+            
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -344,112 +344,10 @@ namespace Simple_Button
         }
 
         private void RndrLog_Click(object sender, EventArgs e)
-        {
-            //ErrorForm errorForm = new ErrorForm("The feature is not implemented yet.");
-            //errorForm.ShowDialog();
-            //AddDataToSheet();
-            //var newestDatetimeInSheet = GetNewestDatetimeFromSheet();
-            //ExtractDataFromLogFile(newestDatetimeInSheet);
-            //addthattosheet ::renderTimes::
-            //KillProcessByName("TCPSVCS.exe");
+        {                        
             OpenRndrLog();
 
-        }
-        public void AddDataToSheet()
-        {
-            try
-            {
-                // Get the current computer name            
-                var computerName = Environment.MachineName;
-
-                // Define the Spreadsheet and Sheet name
-                var spreadsheetName = "Rndr-Stats";
-                var sheetName = computerName;
-
-                // Path to the json credentials file
-                string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
-
-                // Create a new instance of the SheetsService
-                var service = new SheetsService(new BaseClientService.Initializer
-                {
-                    HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
-                    ApplicationName = "GPUMonitor"
-                });
-
-                // Check if the spreadsheet exists
-                var spreadsheetId = GetSpreadsheetId(service, spreadsheetName);
-                // Print out the value of spreadsheetId before creating the spreadsheet
-                System.Diagnostics.Debug.WriteLine("spreadsheetId before creating spreadsheet: " + spreadsheetId);
-
-                // If the spreadsheet doesn't exist, create it
-                if (spreadsheetId == null)
-                {
-                    spreadsheetId = CreateSpreadsheet(service, spreadsheetName);
-                    // Print out the value of spreadsheetId after creating the spreadsheet
-                    System.Diagnostics.Debug.WriteLine("spreadsheetId after creating spreadsheet: " + spreadsheetId);
-                }
-
-                // Check if the sheet exists
-                var sheetId = GetSheetId(service, spreadsheetId, sheetName);
-
-                // If the sheet doesn't exist, create it
-                if (sheetId == null)
-                {
-                    sheetId = CreateSheet(service, spreadsheetId, sheetName);
-                    // Print out the value of spreadsheetName and sheetName
-                    System.Diagnostics.Debug.WriteLine("spreadsheetName: " + spreadsheetName);
-                    System.Diagnostics.Debug.WriteLine("sheetName: " + sheetName);
-                }
-
-                // Add data to the sheet            
-                var renderTimes = ReadRenderLogFile();
-                foreach (var renderTime in renderTimes)
-                {
-                    var dateTime = renderTime.Item1;
-                    var seconds = renderTime.Item2;
-
-                    // Use the QUERY function to check if the renderTime already exists in the sheet
-                    string queryRange = $"{sheetName}!A1:A40";
-                    //string dataRange = "A:B";
-                    var formattedDateTime = dateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                    // WORKING men blir feil :: string query = "=QUERY(" + dataRange + ", \"SELECT * WHERE A = " + formattedDateTime + " AND B = '" + seconds + "'\"";
-                    // WORKING men blir feil :: string query = "=QUERY(A:A, \"SELECT A WHERE A = '53.761002'\")";
-                    //string query = "=QUERY(A:A, \"SELECT * WHERE A = '71.857002'\")";
-                    string query = "=QUERY(A:B, \"SELECT * WHERE A = '72.857002'\")";
-                    var queryRequest = service.Spreadsheets.Values.Get(spreadsheetId, queryRange);
-                    //var queryRequest = service.Spreadsheets.Values.Get(spreadsheetId, null, query);
-                    //System.Diagnostics.Debug.WriteLine("queryRequest: " + queryRequest);
-                    //System.Diagnostics.Debug.WriteLine("query: " + query);
-                    //System.Diagnostics.Debug.WriteLine("queryRange: " + queryRange);
-                    var queryResponse = queryRequest.Execute();
-                    System.Diagnostics.Debug.WriteLine("respons: " + queryResponse);
-                    System.Diagnostics.Debug.WriteLine("respons2: " + queryResponse.Values);
-
-                    if (queryResponse.Values == null || queryResponse.Values.Count == 0)
-                    {
-                        // renderTime doesn't exist in sheet, append it
-                        System.Diagnostics.Debug.WriteLine("DA SKRIVER JEG TIL SHEET");
-                        var range = $"{sheetName}!A1:B20";
-                        var valueRange = new ValueRange();
-                        //valueRange.Values = new List<IList<object>> { new List<object> { seconds, formattedDateTime } };
-                        valueRange.Values = new List<IList<object>> { new List<object> { seconds.ToString(), formattedDateTime } };
-                        var appendRequest = service.Spreadsheets.Values.Append(valueRange, spreadsheetId, range);
-                        appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
-                        appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
-                        System.Diagnostics.Debug.WriteLine("valuerange: " + valueRange.Values);
-                        var appendResponse = appendRequest.Execute();
-                    }
-
-
-                }
-
-            }
-            catch (GoogleApiException ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-            }
-
-        }
+        }      
         private string GetSpreadsheetId(SheetsService service, string spreadsheetName)
         {
             try
@@ -486,6 +384,40 @@ namespace Simple_Button
                     throw;
                 }
             }
+        }
+        private void CheckAndCreateSheet()
+        {
+            // Hard-coded spreadsheet name and sheet name
+            string spreadsheetName = "Rndr-Stats";
+            string sheetName = System.Environment.MachineName;
+
+            // Create an instance of the SheetsService
+            string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
+            var sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+                ApplicationName = "GPUMonitor"
+            });
+
+            // Check if the spreadsheet exists
+            var spreadsheetId = GetSpreadsheetId(sheetsService, spreadsheetName);
+            if (spreadsheetId == null)
+            {
+                // If the spreadsheet does not exist, create it
+                spreadsheetId = CreateSpreadsheet(sheetsService, spreadsheetName);
+                System.Diagnostics.Debug.WriteLine("Created Spreadsheet");
+            }
+            System.Diagnostics.Debug.WriteLine("Spreadsheet exists");
+
+            // Check if the sheet with the current computer name exists
+            var sheetId = GetSheetId(sheetsService, spreadsheetId, sheetName);
+            if (sheetId == null)
+            {
+                // If the sheet does not exist, create it
+                sheetId = CreateSheet(sheetsService, spreadsheetId, sheetName);
+                System.Diagnostics.Debug.WriteLine("Created sheet");
+            }
+            System.Diagnostics.Debug.WriteLine("Sheet exists");
         }
 
         private string CreateSpreadsheet(SheetsService sheetsService, string spreadsheetName)
@@ -553,168 +485,7 @@ namespace Simple_Button
             var newSheetId = response.Replies[0].AddSheet.Properties.SheetId;
 
             return newSheetId.ToString();
-        }
-        private List<Tuple<DateTime, string>> ReadRenderLogFile()
-        {
-            var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
-            var renderTimes = new List<Tuple<DateTime, string>>();
-
-            // Define a regular expression pattern to match the lines that contain render time
-            string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
-            using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(stream))
-            {
-                var lines = new List<string>();
-                while (!reader.EndOfStream)
-                {
-                    lines.Add(reader.ReadLine());
-                }
-                var linesReverse = lines.AsEnumerable().Reverse().Take(20);
-                foreach (var line in linesReverse)
-                {
-                    var match = Regex.Match(line, pattern);
-                    if (match.Success)
-                    {
-                        // Extract the timestamp
-                        var dateTime = match.Groups[1].Value;
-                        System.Diagnostics.Debug.WriteLine("Extracted date time: " + dateTime);
-
-
-                        // Extract the render time
-                        var seconds = match.Groups[2].Value.Replace("render time", "").Trim();
-                        System.Diagnostics.Debug.WriteLine("Extracted seconds: " + seconds);
-                        // Change to DateTime format
-
-                        var dateTimeValue = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                        renderTimes.Add(Tuple.Create(dateTimeValue, seconds));
-                    }
-                }
-            }
-            if (renderTimes.Count == 0)
-                System.Diagnostics.Debug.WriteLine("renderTimes list is empty");
-            else
-                foreach (var x in renderTimes)
-                {
-                    System.Diagnostics.Debug.WriteLine("this is item1 and item2 now: " + x.Item1 + " " + x.Item2);
-                }
-            return renderTimes;
-        }
-
-        public void ExtractDataFromLogFile(DateTime newestDatetimeInSheet)
-        {
-            var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
-            var renderTimes = new List<Tuple<DateTime, string>>();
-
-            // Define a regular expression pattern to match the lines that contain render time
-            string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
-            using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(stream))
-            {
-                var lines = new List<string>();
-                while (!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-                    // Check if the line's timestamp is newer than the newest datetime in the sheet
-                    var match = Regex.Match(line, pattern);
-                    if (match.Success)
-                    {
-                        var dateTime = DateTime.Parse(match.Groups[1].Value);
-                        if (dateTime > newestDatetimeInSheet)
-                        {
-                            // Extract the timestamp
-                            System.Diagnostics.Debug.WriteLine("Extracted date time: " + dateTime);
-
-                            // Extract the render time
-                            var seconds = match.Groups[2].Value.Replace("render time", "").Trim();
-                            System.Diagnostics.Debug.WriteLine("Extracted seconds: " + seconds);
-                            renderTimes.Add(new Tuple<DateTime, string>(dateTime, seconds));
-                            System.Diagnostics.Debug.WriteLine("renderTimes: " + renderTimes);
-                        }
-                    }
-                }
-            }
-        }
-        public DateTime GetNewestDatetimeFromSheet()
-        {
-            string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
-            // Get the current computer name
-            var computerName = Environment.MachineName;
-
-            // Define the Spreadsheet and Sheet name
-            var spreadsheetName = "Rndr-Stats";
-            var sheetName = computerName;
-
-            // Create a new instance of the SheetsService
-            var service = new SheetsService(new BaseClientService.Initializer
-            {
-                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
-                ApplicationName = "GPUMonitor"
-            });
-
-            // Get the spreadsheet Id 
-            var spreadsheetId = GetSpreadsheetId(service, spreadsheetName);
-            System.Diagnostics.Debug.WriteLine("spreadsheetId: " + spreadsheetId);
-
-            // Get the sheet Id 
-            var sheetId = GetSheetId(service, spreadsheetId, sheetName);
-            System.Diagnostics.Debug.WriteLine("sheetId: " + sheetId);
-            // If the sheet doesn't exist, create it
-            if (sheetId == null)
-            {
-                sheetId = CreateSheet(service, spreadsheetId, sheetName);
-                // Print out the value of spreadsheetName and sheetName
-                System.Diagnostics.Debug.WriteLine("spreadsheetName: " + spreadsheetName);
-                System.Diagnostics.Debug.WriteLine("sheetName: " + sheetName);
-            }
-
-            // Get the last row of the sheet
-            var lastRow = GetLastRow(service, spreadsheetId, sheetName);
-            System.Diagnostics.Debug.WriteLine("GET NEW lastRow: " + lastRow);
-
-            // Extract the datetime from the last row
-            var datetime = ExtractDatetimeFromRow(lastRow);
-            System.Diagnostics.Debug.WriteLine("ExtractDatetimeFromRow: " + ExtractDatetimeFromRow);
-
-            return datetime;
-        }
-        public IList<object> GetLastRow(SheetsService service, string spreadsheetId, string sheetName)
-        {
-            // Define the range of cells to get
-            string range = sheetName + "!A:Z";
-
-            // Get the values from the range of cells
-            var request = service.Spreadsheets.Values.Get(spreadsheetId, range);
-            var response = request.Execute();
-            System.Diagnostics.Debug.WriteLine("response was: " + response.Values);
-
-            if (response.Values != null && response.Values.Any())
-            {
-                // Get the last row from the values
-                var lastRow = (IList<object>)response.Values.LastOrDefault();
-                return lastRow;
-                System.Diagnostics.Debug.WriteLine("GETLASTROW lastRow was: " + lastRow);
-            }
-            else
-                System.Diagnostics.Debug.WriteLine("NOTHING");
-            return null;
-        }
-
-
-
-        public DateTime ExtractDatetimeFromRow(IList<object> lastRow)
-        {
-            if (lastRow != null && lastRow.Count > 0 && lastRow[0] != null && !string.IsNullOrWhiteSpace(lastRow[0].ToString()))
-            {
-                var datetimeString = lastRow[0].ToString();
-                var datetime = DateTime.ParseExact(datetimeString, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                return datetime;
-                System.Diagnostics.Debug.WriteLine("EXTRALASTROW Lastrow was: " + datetime);
-            }
-            else
-                return DateTime.MinValue;
-            System.Diagnostics.Debug.WriteLine("no last row made it up");
-        }
-
+        }             
         static void OpenRndrLog()
         {
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
@@ -793,6 +564,106 @@ namespace Simple_Button
         {
             KillProcessByName("TCPSVCS.exe");
         }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            CheckAndCreateSheet();
+            string spreadsheetName = "Rndr-Stats";
+
+            // Create an instance of the SheetsService
+            string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
+            var sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+                ApplicationName = "GPUMonitor"
+            });
+
+            // Get the spreadsheet ID
+            var spreadsheetId = GetSpreadsheetId(sheetsService, spreadsheetName);
+
+            // Call the lastrow of gheet
+            //string sheetName = System.Environment.MachineName;
+            //WriteHello(sheetsService, spreadsheetId, sheetName);
+            string sheetName = System.Environment.MachineName;
+            var lastRow = GetLastRowValue(sheetsService, spreadsheetId, sheetName);
+            // Call the log
+            List<string> renderTimes = ExtractRenderTime(lastRow);
+
+
+
+        }
+        private string GetLastRowValue(SheetsService sheetsService, string spreadsheetId, string sheetName)
+        {
+            // Define the range of cells to check
+            string range = sheetName + "!A:A";
+            // Get the values of the cells in the range
+            var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
+            var response = request.Execute();
+            var values = response.Values;
+
+            // Check if the range is empty
+            if (values == null || values.Count == 0)
+            {
+                System.Diagnostics.Debug.WriteLine("The range is empty.");
+                return null;
+            }
+
+            // Get the last row value
+            var lastRow = values[values.Count - 1][0].ToString();
+            System.Diagnostics.Debug.WriteLine("Last row value: " + lastRow);
+            return lastRow;
+        }
+        private void WriteHello(SheetsService sheetsService, string spreadsheetId, string sheetName)
+        {
+            // Define the range of cells to write to
+            string range = sheetName + "!D1:D1";
+
+            // Write "Hello" to cell D1
+            var newValue = new List<IList<object>> { new List<object> { "Hello" } };
+            var updateRequest = sheetsService.Spreadsheets.Values.Update(new ValueRange { Values = newValue }, spreadsheetId, range);
+            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            updateRequest.Execute();
+            System.Diagnostics.Debug.WriteLine("Hello written to " + sheetName + " D1");
+        }
+        private List<string> ExtractRenderTime(string lastRow)
+        {
+            var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
+            string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
+            DateTime lastRenderTime;
+            if (string.IsNullOrEmpty(lastRow))
+            {
+                lastRenderTime = new DateTime(2000, 1, 1, 0, 0, 0);
+            }
+            else
+            {
+                lastRenderTime = DateTime.ParseExact(lastRow, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+            }
+            List<string> renderTimes = new List<string>();
+            try
+            {
+                string[] lines = System.IO.File.ReadAllLines(renderLogPath);
+                foreach (string line in lines)
+                {
+                    Match match = Regex.Match(line, pattern);
+                    if (match.Success)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Matched line: " + line);
+                        DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                        if (renderTime > lastRenderTime)
+                        {
+                            renderTimes.Add(match.Groups[2].Value);
+                            System.Diagnostics.Debug.WriteLine("Added render time: " + match.Groups[2].Value);
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);
+            }
+            return renderTimes;
+        }
+
     }
 }
 
