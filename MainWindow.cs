@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Resources;
 //using NAudio.Wave;
 using System.Runtime.InteropServices;
@@ -35,7 +36,7 @@ namespace Simple_Button
     {
         private bool _settingsValid = true;
         private bool _isRunning;
-        private string ?_path;
+        private string? _path;
         private int _highLoadGpuCount;
         private int _lowLoadGpuCount;
         private int _gpuCount;
@@ -56,7 +57,7 @@ namespace Simple_Button
         private string? GsheetShare { get; set; }
 
         public MainWindow()
-        {            
+        {
             InitializeComponent();
             this.StartPosition = FormStartPosition.CenterParent;
             this.Text = "Pukerud's GPU Monitor Running On: " + Environment.MachineName;
@@ -75,14 +76,14 @@ namespace Simple_Button
             _lastSent = DateTime.Now.AddMinutes(-_timeThreshold);
             string startingFolder = @"C:\Windows\System32\DriverStore\FileRepository\";
             string fileName = "nvidia-smi.exe";
-            string ?path = null;
+            string? path = null;
             _emailSent = false;
 
             Queue<string> folders = new Queue<string>();
             folders.Enqueue(startingFolder);
 
             while (folders.Count > 0)
-            {               
+            {
                 string currentFolder = folders.Dequeue();
                 string[] files = Directory.GetFiles(currentFolder, fileName);
 
@@ -104,7 +105,7 @@ namespace Simple_Button
             }
             else
             {
-                ErrorForm errorForm = new ErrorForm("nvidia-smi.exe not found");                
+                ErrorForm errorForm = new ErrorForm("nvidia-smi.exe not found");
                 Application.Exit();
             }
             if (checkBox1.Checked) button1_Click(null, null);
@@ -113,7 +114,7 @@ namespace Simple_Button
         }
 
         private async void button1_Click(object? sender, EventArgs? e)
-        {                       
+        {
             //MessageBox.Show("GPULoad Check Started");            
             _isRunning = true;
             await Task.Run(() => {
@@ -137,23 +138,23 @@ namespace Simple_Button
                         process.WaitForExit();
 
                         var gpuUsage = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                        Console.WriteLine(string.Join(",", gpuUsage));                        
-                        _gpuCount = gpuUsage.Length;                        
+                        Console.WriteLine(string.Join(",", gpuUsage));
+                        _gpuCount = gpuUsage.Length;
                         var highLoadRegex = new Regex(@"^(8[0-9]|9[0-9]|100) %$");
                         _highLoadGpuCount = gpuUsage.Count(x => highLoadRegex.IsMatch(x));
                         var lowLoadRegex = new Regex(@"^[0-7][0-9] %$|^0 %$");
                         _lowLoadGpuCount = gpuUsage.Count(x => !highLoadRegex.IsMatch(x));
-                        Console.WriteLine("highload= "+ _highLoadGpuCount +" Lowload= "+ _lowLoadGpuCount + "ok");
+                        Console.WriteLine("highload= " + _highLoadGpuCount + " Lowload= " + _lowLoadGpuCount + "ok");
                     }
                     Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU usage on " + _computer + ". Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount);
                     textBox1.Invoke((MethodInvoker)delegate {
                         textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
-                    });                    
+                    });
                     if (_highLoadGpuCount <= 3 && _lowLoadGpuCount != _gpuCount)
                     {
                         Console.WriteLine("Need to Double-check GPU usage... waiting 60 seconds            ");
                         textBox1.Invoke((MethodInvoker)delegate {
-                            textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Need to Double-check GPU usage... waiting "+ _sleepTime2 + " seconds  \r\n");
+                            textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Need to Double-check GPU usage... waiting " + _sleepTime2 + " seconds  \r\n");
                         });
                         System.Threading.Thread.Sleep(_sleepTime2 * 1000);
                         var currentTime = DateTime.Now;
@@ -185,13 +186,13 @@ namespace Simple_Button
                             var output = process.StandardOutput.ReadToEnd();
                             process.WaitForExit();
 
-                            var gpuUsage = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);                            
+                            var gpuUsage = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                             _gpuCount = gpuUsage.Length;
-                            Console.WriteLine(string.Join(",", gpuUsage));                            
-                            var highLoadRegex = new Regex(@"^(8[0-9]|9[0-9]|100) %$");                            
-                            _highLoadGpuCount = gpuUsage.Count(x => highLoadRegex.IsMatch(x));                            
-                            var lowLoadRegex = new Regex(@"^[0-7][0-9] %$|^0 %$");                            
-                            _lowLoadGpuCount = gpuUsage.Count(x => !highLoadRegex.IsMatch(x));                            
+                            Console.WriteLine(string.Join(",", gpuUsage));
+                            var highLoadRegex = new Regex(@"^(8[0-9]|9[0-9]|100) %$");
+                            _highLoadGpuCount = gpuUsage.Count(x => highLoadRegex.IsMatch(x));
+                            var lowLoadRegex = new Regex(@"^[0-7][0-9] %$|^0 %$");
+                            _lowLoadGpuCount = gpuUsage.Count(x => !highLoadRegex.IsMatch(x));
                             Console.WriteLine("highload= " + _highLoadGpuCount + " Lowload= " + _lowLoadGpuCount + " ok");
                             //_highLoadGpuCount = gpuUsage.Count(x => x.Contains("100 %") || x.Contains("8[0-9] %") || x.Contains("9[0-9] %"));
                             //_lowLoadGpuCount = gpuUsage.Count(x => !x.Contains("100 %") && !x.Contains("8[0-9] %") && !x.Contains("9[0-9] %"));
@@ -200,8 +201,8 @@ namespace Simple_Button
                         textBox1.Invoke((MethodInvoker)delegate {
                             textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
                         });
-                        if (_highLoadGpuCount <= 3 && _lowLoadGpuCount != _gpuCount && !_emailSent) 
-                            {
+                        if (_highLoadGpuCount <= 3 && _lowLoadGpuCount != _gpuCount && !_emailSent)
+                        {
                             textBox1.Invoke((MethodInvoker)delegate
                             {
                                 textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Sending Mail \r\n");
@@ -220,21 +221,21 @@ namespace Simple_Button
                                 textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU's are fine again or Email is still timed out. " + timeSinceLastEmail.ToString(@"hh\:mm\:ss") + " since last Email \r\n");
                             });
                         }
-                                                
+
                     }
                     System.Threading.Thread.Sleep(_sleepTime * 1000);
                 }
             });
-            
-        }        
+
+        }
         private void Form1_Load(object sender, EventArgs e)
         {
-          
+
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-           // textBox1.Text = "";
+            // textBox1.Text = "";
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -251,7 +252,7 @@ namespace Simple_Button
 
             try
             {
-                using (var client = new SmtpClient(_smtpServer, _emailSmtpServerPort))                    
+                using (var client = new SmtpClient(_smtpServer, _emailSmtpServerPort))
                 {
                     client.EnableSsl = true;
                     client.Credentials = new NetworkCredential(_smtpUser, _smtpPassword);
@@ -259,7 +260,7 @@ namespace Simple_Button
                     using (var message = new MailMessage(_mailFrom, to, subject, body))
 
                         try
-                        {                            
+                        {
                             client.Send(message);
                         }
                         catch (SmtpException ex)
@@ -289,7 +290,7 @@ namespace Simple_Button
             }
             _Subject = "Looks like thing are in a HUNG state at " + _computer;
             _Body = "Looks like " + _highLoadGpuCount + " GPU(s) has 100% Load, the rest has 0% load ";
-            SendEmail(_mailTo, _Subject, _Body);            
+            SendEmail(_mailTo, _Subject, _Body);
 
         }
 
@@ -300,7 +301,7 @@ namespace Simple_Button
         }
         private void Settings_Click(object sender, EventArgs e)
         {
-           
+
         }
         private void RetrieveRegistryValues()
         {
@@ -311,22 +312,22 @@ namespace Simple_Button
             _mailTo = (string?)Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "MailTo", "");
             _mailFrom = (string?)Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "MailFrom", "");
             object timeThreshold = Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "EmailTimeout", null);
-            _timeThreshold = (timeThreshold != null && timeThreshold is int) ? (int)timeThreshold : 0;            
+            _timeThreshold = (timeThreshold != null && timeThreshold is int) ? (int)timeThreshold : 0;
             _sleepTime = (int?)(Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "CheckTimer", null) as int?) ?? 0;
             object sleepTime2 = Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "DobbelCheck", null);
             _sleepTime2 = (sleepTime2 != null && sleepTime2 is int) ? (int)sleepTime2 : 0;
-            
+
 
             if (_smtpServer == "" || _emailSmtpServerPort == 0 || _smtpUser == "" || _smtpPassword == "" || _mailTo == "" || _mailFrom == "" || _smtpServer == null || _smtpUser == null || _smtpPassword == null || _mailTo == null || _mailFrom == null)
             {
                 _settingsValid = false;
                 ErrorForm errorForm = new ErrorForm("Settings missing. Please open the settings form and save your settings");
-                errorForm.ShowDialog();                
+                errorForm.ShowDialog();
                 _isRunning = false;
                 return;
             }
-                _settingsValid = true;
-                
+            _settingsValid = true;
+
         }
 
 
@@ -344,56 +345,61 @@ namespace Simple_Button
 
         private void RndrLog_Click(object sender, EventArgs e)
         {
-            ErrorForm errorForm = new ErrorForm("The feature is not implemented yet.");
-            errorForm.ShowDialog();
+            //ErrorForm errorForm = new ErrorForm("The feature is not implemented yet.");
+            //errorForm.ShowDialog();
             //AddDataToSheet();
+            //var newestDatetimeInSheet = GetNewestDatetimeFromSheet();
+            //ExtractDataFromLogFile(newestDatetimeInSheet);
+            //addthattosheet ::renderTimes::
+            //KillProcessByName("TCPSVCS.exe");
+            OpenRndrLog();
 
         }
         public void AddDataToSheet()
-        {          
+        {
             try
             {
                 // Get the current computer name            
                 var computerName = Environment.MachineName;
 
-            // Define the Spreadsheet and Sheet name
-            var spreadsheetName = "Rndr-Stats";
-            var sheetName = computerName;
+                // Define the Spreadsheet and Sheet name
+                var spreadsheetName = "Rndr-Stats";
+                var sheetName = computerName;
 
-            // Path to the json credentials file
-            string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
+                // Path to the json credentials file
+                string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
 
-            // Create a new instance of the SheetsService
-            var service = new SheetsService(new BaseClientService.Initializer
-            {
-                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
-                ApplicationName = "GPUMonitor"
-            });       
+                // Create a new instance of the SheetsService
+                var service = new SheetsService(new BaseClientService.Initializer
+                {
+                    HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+                    ApplicationName = "GPUMonitor"
+                });
 
                 // Check if the spreadsheet exists
                 var spreadsheetId = GetSpreadsheetId(service, spreadsheetName);
                 // Print out the value of spreadsheetId before creating the spreadsheet
                 System.Diagnostics.Debug.WriteLine("spreadsheetId before creating spreadsheet: " + spreadsheetId);
 
-            // If the spreadsheet doesn't exist, create it
-            if (spreadsheetId == null)
-            {
-                spreadsheetId = CreateSpreadsheet(service, spreadsheetName);
+                // If the spreadsheet doesn't exist, create it
+                if (spreadsheetId == null)
+                {
+                    spreadsheetId = CreateSpreadsheet(service, spreadsheetName);
                     // Print out the value of spreadsheetId after creating the spreadsheet
                     System.Diagnostics.Debug.WriteLine("spreadsheetId after creating spreadsheet: " + spreadsheetId);
-            }
+                }
 
-            // Check if the sheet exists
-            var sheetId = GetSheetId(service, spreadsheetId, sheetName);
+                // Check if the sheet exists
+                var sheetId = GetSheetId(service, spreadsheetId, sheetName);
 
-            // If the sheet doesn't exist, create it
-            if (sheetId == null)
-            {
-                sheetId = CreateSheet(service, spreadsheetId, sheetName);
-                // Print out the value of spreadsheetName and sheetName
-                System.Diagnostics.Debug.WriteLine("spreadsheetName: " + spreadsheetName);
-                System.Diagnostics.Debug.WriteLine("sheetName: " + sheetName);
-            }
+                // If the sheet doesn't exist, create it
+                if (sheetId == null)
+                {
+                    sheetId = CreateSheet(service, spreadsheetId, sheetName);
+                    // Print out the value of spreadsheetName and sheetName
+                    System.Diagnostics.Debug.WriteLine("spreadsheetName: " + spreadsheetName);
+                    System.Diagnostics.Debug.WriteLine("sheetName: " + sheetName);
+                }
 
                 // Add data to the sheet            
                 var renderTimes = ReadRenderLogFile();
@@ -403,16 +409,18 @@ namespace Simple_Button
                     var seconds = renderTime.Item2;
 
                     // Use the QUERY function to check if the renderTime already exists in the sheet
-                    string queryRange = "A1:B20";
-                    string dataRange = "A:B";
+                    string queryRange = $"{sheetName}!A1:A40";
+                    //string dataRange = "A:B";
                     var formattedDateTime = dateTime.ToString("yyyy-MM-dd HH:mm:ss");
                     // WORKING men blir feil :: string query = "=QUERY(" + dataRange + ", \"SELECT * WHERE A = " + formattedDateTime + " AND B = '" + seconds + "'\"";
                     // WORKING men blir feil :: string query = "=QUERY(A:A, \"SELECT A WHERE A = '53.761002'\")";
-                    string query = "=QUERY(A:A, \"SELECT * WHERE A = '66.626999'\")";
+                    //string query = "=QUERY(A:A, \"SELECT * WHERE A = '71.857002'\")";
+                    string query = "=QUERY(A:B, \"SELECT * WHERE A = '72.857002'\")";
                     var queryRequest = service.Spreadsheets.Values.Get(spreadsheetId, queryRange);
-                    System.Diagnostics.Debug.WriteLine("queryRequest: " + queryRequest);
-                    System.Diagnostics.Debug.WriteLine("query: " + query);
-                    System.Diagnostics.Debug.WriteLine("queryRange: " + queryRange);
+                    //var queryRequest = service.Spreadsheets.Values.Get(spreadsheetId, null, query);
+                    //System.Diagnostics.Debug.WriteLine("queryRequest: " + queryRequest);
+                    //System.Diagnostics.Debug.WriteLine("query: " + query);
+                    //System.Diagnostics.Debug.WriteLine("queryRange: " + queryRange);
                     var queryResponse = queryRequest.Execute();
                     System.Diagnostics.Debug.WriteLine("respons: " + queryResponse);
                     System.Diagnostics.Debug.WriteLine("respons2: " + queryResponse.Values);
@@ -420,13 +428,15 @@ namespace Simple_Button
                     if (queryResponse.Values == null || queryResponse.Values.Count == 0)
                     {
                         // renderTime doesn't exist in sheet, append it
-                        var range = $"{sheetName}!A1";
+                        System.Diagnostics.Debug.WriteLine("DA SKRIVER JEG TIL SHEET");
+                        var range = $"{sheetName}!A1:B20";
                         var valueRange = new ValueRange();
                         //valueRange.Values = new List<IList<object>> { new List<object> { seconds, formattedDateTime } };
                         valueRange.Values = new List<IList<object>> { new List<object> { seconds.ToString(), formattedDateTime } };
                         var appendRequest = service.Spreadsheets.Values.Append(valueRange, spreadsheetId, range);
                         appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
                         appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
+                        System.Diagnostics.Debug.WriteLine("valuerange: " + valueRange.Values);
                         var appendResponse = appendRequest.Execute();
                     }
 
@@ -574,7 +584,7 @@ namespace Simple_Button
                         var seconds = match.Groups[2].Value.Replace("render time", "").Trim();
                         System.Diagnostics.Debug.WriteLine("Extracted seconds: " + seconds);
                         // Change to DateTime format
-                        
+
                         var dateTimeValue = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                         renderTimes.Add(Tuple.Create(dateTimeValue, seconds));
                     }
@@ -585,13 +595,204 @@ namespace Simple_Button
             else
                 foreach (var x in renderTimes)
                 {
-                    System.Diagnostics.Debug.WriteLine("this is item1 and item2 now: "+ x.Item1 + " " + x.Item2);
+                    System.Diagnostics.Debug.WriteLine("this is item1 and item2 now: " + x.Item1 + " " + x.Item2);
                 }
             return renderTimes;
         }
 
+        public void ExtractDataFromLogFile(DateTime newestDatetimeInSheet)
+        {
+            var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
+            var renderTimes = new List<Tuple<DateTime, string>>();
+
+            // Define a regular expression pattern to match the lines that contain render time
+            string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
+            using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(stream))
+            {
+                var lines = new List<string>();
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    // Check if the line's timestamp is newer than the newest datetime in the sheet
+                    var match = Regex.Match(line, pattern);
+                    if (match.Success)
+                    {
+                        var dateTime = DateTime.Parse(match.Groups[1].Value);
+                        if (dateTime > newestDatetimeInSheet)
+                        {
+                            // Extract the timestamp
+                            System.Diagnostics.Debug.WriteLine("Extracted date time: " + dateTime);
+
+                            // Extract the render time
+                            var seconds = match.Groups[2].Value.Replace("render time", "").Trim();
+                            System.Diagnostics.Debug.WriteLine("Extracted seconds: " + seconds);
+                            renderTimes.Add(new Tuple<DateTime, string>(dateTime, seconds));
+                            System.Diagnostics.Debug.WriteLine("renderTimes: " + renderTimes);
+                        }
+                    }
+                }
+            }
+        }
+        public DateTime GetNewestDatetimeFromSheet()
+        {
+            string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
+            // Get the current computer name
+            var computerName = Environment.MachineName;
+
+            // Define the Spreadsheet and Sheet name
+            var spreadsheetName = "Rndr-Stats";
+            var sheetName = computerName;
+
+            // Create a new instance of the SheetsService
+            var service = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+                ApplicationName = "GPUMonitor"
+            });
+
+            // Get the spreadsheet Id 
+            var spreadsheetId = GetSpreadsheetId(service, spreadsheetName);
+            System.Diagnostics.Debug.WriteLine("spreadsheetId: " + spreadsheetId);
+
+            // Get the sheet Id 
+            var sheetId = GetSheetId(service, spreadsheetId, sheetName);
+            System.Diagnostics.Debug.WriteLine("sheetId: " + sheetId);
+            // If the sheet doesn't exist, create it
+            if (sheetId == null)
+            {
+                sheetId = CreateSheet(service, spreadsheetId, sheetName);
+                // Print out the value of spreadsheetName and sheetName
+                System.Diagnostics.Debug.WriteLine("spreadsheetName: " + spreadsheetName);
+                System.Diagnostics.Debug.WriteLine("sheetName: " + sheetName);
+            }
+
+            // Get the last row of the sheet
+            var lastRow = GetLastRow(service, spreadsheetId, sheetName);
+            System.Diagnostics.Debug.WriteLine("GET NEW lastRow: " + lastRow);
+
+            // Extract the datetime from the last row
+            var datetime = ExtractDatetimeFromRow(lastRow);
+            System.Diagnostics.Debug.WriteLine("ExtractDatetimeFromRow: " + ExtractDatetimeFromRow);
+
+            return datetime;
+        }
+        public IList<object> GetLastRow(SheetsService service, string spreadsheetId, string sheetName)
+        {
+            // Define the range of cells to get
+            string range = sheetName + "!A:Z";
+
+            // Get the values from the range of cells
+            var request = service.Spreadsheets.Values.Get(spreadsheetId, range);
+            var response = request.Execute();
+            System.Diagnostics.Debug.WriteLine("response was: " + response.Values);
+
+            if (response.Values != null && response.Values.Any())
+            {
+                // Get the last row from the values
+                var lastRow = (IList<object>)response.Values.LastOrDefault();
+                return lastRow;
+                System.Diagnostics.Debug.WriteLine("GETLASTROW lastRow was: " + lastRow);
+            }
+            else
+                System.Diagnostics.Debug.WriteLine("NOTHING");
+            return null;
+        }
 
 
+
+        public DateTime ExtractDatetimeFromRow(IList<object> lastRow)
+        {
+            if (lastRow != null && lastRow.Count > 0 && lastRow[0] != null && !string.IsNullOrWhiteSpace(lastRow[0].ToString()))
+            {
+                var datetimeString = lastRow[0].ToString();
+                var datetime = DateTime.ParseExact(datetimeString, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                return datetime;
+                System.Diagnostics.Debug.WriteLine("EXTRALASTROW Lastrow was: " + datetime);
+            }
+            else
+                return DateTime.MinValue;
+            System.Diagnostics.Debug.WriteLine("no last row made it up");
+        }
+
+        static void OpenRndrLog()
+        {
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
+            if (!System.IO.File.Exists(filePath))
+            {
+                Console.WriteLine("File does not exist.");
+                return;
+            }
+            try
+            {
+                Process.Start("notepad.exe", filePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+
+        public static void TDRDelay()
+        {
+            string registryPath = @"HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
+            try
+            {
+                RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath);
+                key.SetValue("TdrLevel", 3, RegistryValueKind.DWord);
+                key.SetValue("TdrDelay", 60, RegistryValueKind.DWord);
+                key.SetValue("TdrDdiDelay", 60, RegistryValueKind.DWord);
+                System.Diagnostics.Debug.WriteLine("Registry Changed");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("The registry key could not be created or modified:");
+                Console.WriteLine(e.Message);
+            }
+            var processInfo = new ProcessStartInfo
+            {
+                Verb = "runas",
+                FileName = System.Reflection.Assembly.GetExecutingAssembly().Location
+            };
+            try
+            {
+                var process = Process.Start(processInfo);
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("The process failed to start: {0}", ex.Message);
+            }
+        }        
+        static void OpenWIKI()
+        {
+            string url = "https://docs.google.com/document/d/1j3HdjX7V2ot4W95IofGP3q1hjeBxbRqcBcrSVmFzHb8/edit";
+            System.Diagnostics.Process.Start("cmd", "/c start " + url);
+        }
+        public void KillProcessByName(string processName)
+        {
+            Process[] processes = Process.GetProcessesByName(processName);
+            foreach (var process in processes)
+            {
+                process.Kill();
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            OpenWIKI();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            TDRDelay();
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            KillProcessByName("TCPSVCS.exe");
+        }
     }
 }
 
