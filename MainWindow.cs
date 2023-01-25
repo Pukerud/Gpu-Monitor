@@ -117,7 +117,8 @@ namespace Simple_Button
         {
             //MessageBox.Show("GPULoad Check Started");            
             _isRunning = true;
-            await Task.Run(() => {
+            await Task.Run(() =>
+            {
                 while (_isRunning)
                 {
                     RetrieveRegistryValues();
@@ -147,13 +148,15 @@ namespace Simple_Button
                         Console.WriteLine("highload= " + _highLoadGpuCount + " Lowload= " + _lowLoadGpuCount + "ok");
                     }
                     Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU usage on " + _computer + ". Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount);
-                    textBox1.Invoke((MethodInvoker)delegate {
+                    textBox1.Invoke((MethodInvoker)delegate
+                    {
                         textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
                     });
                     if (_highLoadGpuCount <= 3 && _lowLoadGpuCount != _gpuCount)
                     {
                         Console.WriteLine("Need to Double-check GPU usage... waiting 60 seconds            ");
-                        textBox1.Invoke((MethodInvoker)delegate {
+                        textBox1.Invoke((MethodInvoker)delegate
+                        {
                             textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Need to Double-check GPU usage... waiting " + _sleepTime2 + " seconds  \r\n");
                         });
                         System.Threading.Thread.Sleep(_sleepTime2 * 1000);
@@ -162,12 +165,14 @@ namespace Simple_Button
                         if (timeSinceLastEmail.TotalMinutes >= _timeThreshold)
                         {
                             _emailSent = false;
-                            textBox1.Invoke((MethodInvoker)delegate {
+                            textBox1.Invoke((MethodInvoker)delegate
+                            {
                                 textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Sending Mail Enabled Again....\r\n");
                             });
                         }
                         Console.WriteLine("Double-checking GPU usage...");
-                        textBox1.Invoke((MethodInvoker)delegate {
+                        textBox1.Invoke((MethodInvoker)delegate
+                        {
                             textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Double-checking GPU usage...\r\n");
                         });
                         using (var process = new Process
@@ -198,7 +203,8 @@ namespace Simple_Button
                             //_lowLoadGpuCount = gpuUsage.Count(x => !x.Contains("100 %") && !x.Contains("8[0-9] %") && !x.Contains("9[0-9] %"));
                         }
                         Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] GPU usage on " + _computer + ". Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
-                        textBox1.Invoke((MethodInvoker)delegate {
+                        textBox1.Invoke((MethodInvoker)delegate
+                        {
                             textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Number of GPUs: " + _gpuCount + ", High load GPU count: " + _highLoadGpuCount + ", Low load GPU count: " + _lowLoadGpuCount + Environment.NewLine);
                         });
                         if (_highLoadGpuCount <= 3 && _lowLoadGpuCount != _gpuCount && !_emailSent)
@@ -235,7 +241,7 @@ namespace Simple_Button
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            
+
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -344,10 +350,10 @@ namespace Simple_Button
         }
 
         private void RndrLog_Click(object sender, EventArgs e)
-        {                        
+        {
             OpenRndrLog();
 
-        }      
+        }
         private string GetSpreadsheetId(SheetsService service, string spreadsheetName)
         {
             try
@@ -485,7 +491,7 @@ namespace Simple_Button
             var newSheetId = response.Replies[0].AddSheet.Properties.SheetId;
 
             return newSheetId.ToString();
-        }             
+        }
         static void OpenRndrLog()
         {
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
@@ -508,14 +514,13 @@ namespace Simple_Button
         public static void TDRDelay()
         {
             string registryPath = @"HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
-            try
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath, true))
+                try
             {
-                RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath);
-                key.SetValue("TdrLevel", 3, RegistryValueKind.DWord);
-                key.SetValue("TdrDelay", 60, RegistryValueKind.DWord);
-                key.SetValue("TdrDdiDelay", 60, RegistryValueKind.DWord);
-                System.Diagnostics.Debug.WriteLine("Registry Changed");
-            }
+                    key.SetValue("TdrLevel", 3, RegistryValueKind.DWord);
+                    key.SetValue("TdrDelay", 60, RegistryValueKind.DWord);
+                    key.SetValue("TdrDdiDelay", 60, RegistryValueKind.DWord);
+                }
             catch (Exception e)
             {
                 Console.WriteLine("The registry key could not be created or modified:");
@@ -535,20 +540,33 @@ namespace Simple_Button
             {
                 Console.WriteLine("The process failed to start: {0}", ex.Message);
             }
-        }        
+        }
         static void OpenWIKI()
         {
             string url = "https://docs.google.com/document/d/1j3HdjX7V2ot4W95IofGP3q1hjeBxbRqcBcrSVmFzHb8/edit";
             System.Diagnostics.Process.Start("cmd", "/c start " + url);
         }
-        public void KillProcessByName(string processName)
-        {
-            Process[] processes = Process.GetProcessesByName(processName);
-            foreach (var process in processes)
-            {
-                process.Kill();
-            }
-        }
+        //public void KillProcessByName(string processName)
+        //{
+        //    // Try to terminate the process using the taskkill command
+        //    ProcessStartInfo startInfo = new ProcessStartInfo();
+        //    startInfo.FileName = "taskkill";
+        //    startInfo.Arguments = "/IM " + processName + " /F";
+        //    Process.Start(startInfo);
+
+        //    // Wait for the process to terminate
+        //    Thread.Sleep(3000);
+
+        //    // If the process is still running, forcefully terminate it
+        //    //using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Process WHERE Name='" + processName + "'"))
+        //    using (var processes = searcher.Get())
+        //    {
+        //        foreach (var process in processes)
+        //        {
+        //            process.InvokeMethod("Terminate", null);
+        //        }
+        //    }
+        //}
 
         private void button4_Click(object sender, EventArgs e)
         {
@@ -562,7 +580,11 @@ namespace Simple_Button
 
         private void button6_Click(object sender, EventArgs e)
         {
-            KillProcessByName("TCPSVCS.exe");
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = "taskkill";
+            startInfo.Arguments = "/IM TCPSVCS.exe /F";
+            Process.Start(startInfo);
+
         }
 
         private void button7_Click(object sender, EventArgs e)
@@ -586,8 +608,16 @@ namespace Simple_Button
             //WriteHello(sheetsService, spreadsheetId, sheetName);
             string sheetName = System.Environment.MachineName;
             var lastRow = GetLastRowValue(sheetsService, spreadsheetId, sheetName);
-            // Call the log
-            List<string> renderTimes = ExtractRenderTime(lastRow);
+            var extractedData = ExtractRenderTime(lastRow);
+            //foreach (var renderTime in extractedData.Item1)
+            //    System.Diagnostics.Debug.WriteLine("Render Time: " + renderTime);
+            //foreach (var datetime in extractedData.Item2)
+            //    System.Diagnostics.Debug.WriteLine("Datetime: " + datetime);
+
+            if (extractedData.Item1 != null && extractedData.Item1.Count > 0 && extractedData.Item2 != null && extractedData.Item2.Count > 0)
+            {
+                AddRenderTime(extractedData.Item1, extractedData.Item2, spreadsheetId, sheetName);
+            }
 
 
 
@@ -601,19 +631,24 @@ namespace Simple_Button
             var response = request.Execute();
             var values = response.Values;
 
+
+            string lastRow = null;
             // Check if the range is empty
             if (values == null || values.Count == 0)
             {
                 System.Diagnostics.Debug.WriteLine("The range is empty.");
-                return null;
+                lastRow = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString();
+                return lastRow;
             }
-
-            // Get the last row value
-            var lastRow = values[values.Count - 1][0].ToString();
-            System.Diagnostics.Debug.WriteLine("Last row value: " + lastRow);
-            return lastRow;
+            else
+            {
+                // Get the last row value
+                lastRow = values[values.Count - 1][0].ToString();
+                System.Diagnostics.Debug.WriteLine("Last row value: " + lastRow);
+                return lastRow;
+            }
         }
-        private void WriteHello(SheetsService sheetsService, string spreadsheetId, string sheetName)
+            private void WriteHello(SheetsService sheetsService, string spreadsheetId, string sheetName)
         {
             // Define the range of cells to write to
             string range = sheetName + "!D1:D1";
@@ -625,48 +660,157 @@ namespace Simple_Button
             updateRequest.Execute();
             System.Diagnostics.Debug.WriteLine("Hello written to " + sheetName + " D1");
         }
-        private List<string> ExtractRenderTime(string lastRow)
+        private Tuple<List<string>, List<string>> ExtractRenderTime(string lastRow)
         {
             var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
             string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
             DateTime lastRenderTime;
             if (string.IsNullOrEmpty(lastRow))
             {
-                lastRenderTime = new DateTime(2000, 1, 1, 0, 0, 0);
+                lastRenderTime = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             }
             else
             {
-                lastRenderTime = DateTime.ParseExact(lastRow, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                string[] formats = { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd H:mm:ss" };
+                if (!DateTime.TryParseExact(lastRow, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out lastRenderTime))
+                {
+                    // handle the error
+                }
             }
             List<string> renderTimes = new List<string>();
+            List<string> datetimeFromLog = new List<string>();  //initialize variable
             try
             {
-                string[] lines = System.IO.File.ReadAllLines(renderLogPath);
-                foreach (string line in lines)
+                using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(stream))
                 {
-                    Match match = Regex.Match(line, pattern);
-                    if (match.Success)
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        System.Diagnostics.Debug.WriteLine("Matched line: " + line);
-                        DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                        if (renderTime > lastRenderTime)
+                        Match match = Regex.Match(line, pattern);
+                        if (match.Success)
                         {
-                            renderTimes.Add(match.Groups[2].Value);
-                            System.Diagnostics.Debug.WriteLine("Added render time: " + match.Groups[2].Value);
+                            System.Diagnostics.Debug.WriteLine("Matched line: " + line);
+                            DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                            if (renderTime > lastRenderTime)
+                            {
+                                renderTimes.Add(match.Groups[2].Value);                                
+                                datetimeFromLog.Add(renderTime.ToString());
+                            }
+                            //save datetime as string 
+                            //System.Diagnostics.Debug.WriteLine("Added date time: " + match.Groups[1].Value);
+                            if (renderTime > lastRenderTime)
+                            {
+                                renderTimes.Add(match.Groups[2].Value);
+                                renderTimes = renderTimes.Select(x => Regex.Replace(x, @"render time ", "")).ToList();
+                                datetimeFromLog.Add(renderTime.ToString());
+                                //System.Diagnostics.Debug.WriteLine("Added render time: " + match.Groups[2].Value);
+                            }
+
                         }
                     }
                 }
-            }
+            }            
             catch (IOException e)
             {
-                System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);
+                System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);               
             }
-            return renderTimes;
+
+            System.Diagnostics.Debug.WriteLine("datetimeFromLog: " + string.Join(",", datetimeFromLog));
+            System.Diagnostics.Debug.WriteLine("renderTimes: " + string.Join(",", renderTimes));
+            return Tuple.Create(datetimeFromLog, renderTimes);
+
         }
 
+
+        //private Tuple<DateTime, List<string>> ExtractRenderTime2(string lastRow)
+        //{
+        //    var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
+        //    string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
+        //    DateTime lastRenderTime;
+        //    if (string.IsNullOrEmpty(lastRow))
+        //    {
+        //        lastRenderTime = new DateTime(2000, 1, 1, 0, 0, 0);
+        //    }
+        //    else
+        //    {
+        //        string[] formats = { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd H:mm:ss" };
+        //        if (!DateTime.TryParseExact(lastRow, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out lastRenderTime))
+        //        {
+        //            // handle the error
+        //        }
+        //    }
+        //    List<string> renderTimes = new List<string>();
+        //    DateTime datetimeFromLog = new DateTime();
+        //    try
+        //    {
+        //        using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        //        using (var reader = new StreamReader(stream))
+        //        {
+        //            string line;
+        //            while ((line = reader.ReadLine()) != null)
+        //            {
+        //                Match match = Regex.Match(line, pattern);
+        //                if (match.Success)
+        //                {
+        //                    DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        //                    System.Diagnostics.Debug.WriteLine("Added date time: " + match.Groups[1].Value);
+        //                    if (renderTime > lastRenderTime)
+        //                    {
+        //                        renderTimes.Add(match.Groups[2].Value);
+        //                        datetimeFromLog = renderTime;
+        //                        System.Diagnostics.Debug.WriteLine("Added render time: " + match.Groups[2].Value);
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("Error reading render log file: " + ex.Message);
+        //    }
+        //    System.Diagnostics.Debug.WriteLine("This is datetime and render on one line: " + datetimeFromLog + renderTimes);
+        //    return Tuple.Create(datetimeFromLog, renderTimes);
+        //}
+
+        private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
+        {
+            // Create a new instance of the Sheets API service
+            string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
+            var sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+                ApplicationName = "GPUMonitor"
+            });
+            // Get the sheet ID
+            var sheetId = GetSheetId(sheetsService, spreadsheetId, sheetName);
+            // Create a new request body
+            var requestBody = new BatchUpdateValuesRequest();
+            requestBody.ValueInputOption = "USER_ENTERED";
+            requestBody.Data = new List<ValueRange>();
+            // Add the datetimeFromLog values and render times values 25-Jan-23 18:53:22' 
+            datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).ToList();
+            System.Diagnostics.Debug.WriteLine("datetimeFromLog2: " + string.Join(",", datetimeFromLog));            
+            List<IList<object>> values = new List<IList<object>>();
+            for (int i = 0; i < datetimeFromLog.Count; i++)
+            {
+                values.Add(new List<object>() { DateTime.ParseExact(datetimeFromLog[i], "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"), renderTimes[i] });
+            }
+
+            requestBody.Data.Add(new ValueRange
+            {
+                Range = $"{sheetName}!A1:B{datetimeFromLog.Count}",
+                Values = values
+            });
+            // Execute the request
+            var request = sheetsService.Spreadsheets.Values.BatchUpdate(requestBody, spreadsheetId);
+            request.Execute();
+        }
+
+
     }
+
 }
 
 
-    
 

@@ -134,7 +134,6 @@
             // button5
             // 
             this.button5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button5.Enabled = false;
             this.button5.Location = new System.Drawing.Point(315, 217);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(75, 22);
