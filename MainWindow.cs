@@ -703,7 +703,8 @@ namespace Simple_Button
                         if (match.Success)
                         {
                             System.Diagnostics.Debug.WriteLine("Matched line: " + line);
-                            DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                            //DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                            DateTime renderTime = DateTime.Parse(match.Groups[1].Value);
                             //if (renderTime > lastRenderTime)
                             //{
                             //    renderTimes.Add(match.Groups[2].Value);                                
@@ -751,7 +752,9 @@ namespace Simple_Button
             requestBody.ValueInputOption = "USER_ENTERED";
             requestBody.Data = new List<ValueRange>();
             // Add the datetimeFromLog values and render times values 25-Jan-23 18:53:22' 
-            datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).ToList();
+            //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).ToList();
+            //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
+            datetimeFromLog = datetimeFromLog.Select(x => DateTime.Parse(x).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
             System.Diagnostics.Debug.WriteLine("datetimeFromLog2: " + string.Join(",", datetimeFromLog));
             List<IList<object>> values = new List<IList<object>>();
             for (int i = 0; i < datetimeFromLog.Count; i++)
