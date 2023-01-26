@@ -34,5 +34,17 @@ namespace Simple_Button.Properties {
                 this["Autostart"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AutoSheet {
+            get {
+                return ((bool)(this["AutoSheet"]));
+            }
+            set {
+                this["AutoSheet"] = value;
+            }
+        }
     }
 }
