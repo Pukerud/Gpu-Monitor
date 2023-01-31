@@ -487,6 +487,39 @@ namespace Simple_Button
 
             return spreadsheetId;
         }
+        private static void CreateSheetIfNotExists(SheetsService sheetsService, string spreadsheetId)
+        {
+            var request = sheetsService.Spreadsheets.Get(spreadsheetId);
+            var sheets = request.Execute().Sheets;
+            var sheetName = "Stats";
+
+            var sheetExists = sheets.Any(s => s.Properties.Title == sheetName);
+
+            if (!sheetExists)
+            {
+                var addSheetRequest = new AddSheetRequest
+                {
+                    Properties = new SheetProperties
+                    {
+                        Title = sheetName
+                    }
+                };
+
+                var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
+                {
+                    Requests = new List<Request>
+            {
+                new Request
+                {
+                    AddSheet = addSheetRequest
+                }
+            }
+                };
+
+                sheetsService.Spreadsheets.BatchUpdate(batchUpdateRequest, spreadsheetId).Execute();
+            }
+        }
+
 
         private string GetSheetId(SheetsService service, string spreadsheetId, string sheetName)
         {
@@ -610,6 +643,9 @@ namespace Simple_Button
             CheckAndCreateSheet();
             string spreadsheetName = "Rndr-Stats";
 
+            // sheetName
+            string sheetName = System.Environment.MachineName;
+
             // Create an instance of the SheetsService            
             var credPath = GetCredentialsPath();
             var sheetsService = new SheetsService(new BaseClientService.Initializer
@@ -621,8 +657,12 @@ namespace Simple_Button
             // Get the spreadsheet ID
             var spreadsheetId = GetSpreadsheetId(sheetsService, spreadsheetName);
 
-            // Call the lastrow of gheet            
-            string sheetName = System.Environment.MachineName;
+            // Create STATS SHEET
+            CreateSheetIfNotExists(sheetsService, spreadsheetId);
+            // Add computer/sheetname to Stats page
+            CheckAndAddComputerName( spreadsheetName, sheetName );
+
+            // Call the lastrow of gheet          
             var lastRow = GetLastRowValue(sheetsService, spreadsheetId, sheetName);
             var extractedData = ExtractRenderTime(lastRow);            
 
@@ -631,9 +671,57 @@ namespace Simple_Button
                 AddRenderTime(extractedData.Item1, extractedData.Item2, spreadsheetId, sheetName);
             }
 
-
-
         }
+        public static void CheckAndAddComputerName(string spreadsheetName, string computerName)
+        {
+            var credPath = GetCredentialsPath();
+            var sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+                ApplicationName = "GPUMonitor"
+            });
+
+            var spreadsheetId = GetSpreadsheetId(sheetsService, spreadsheetName);
+
+            var sheetId = GetSheetId(sheetsService, spreadsheetId, "Stats");
+            if (sheetId == null)
+            {
+                return;
+            }
+
+            var range = "Stats!E5:E";
+            var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
+            var response = request.Execute();
+            var values = response.Values;
+            if (values == null)
+            {
+                return;
+            }
+
+            var computerNameExists = false;
+            foreach (var row in values)
+            {
+                if (row.Count > 0 && (string)row[0] == computerName)
+                {
+                    computerNameExists = true;
+                    break;
+                }
+            }
+
+            if (!computerNameExists)
+            {
+                var updateRange = "Stats!E" + (values.Count + 5);
+                var valueRange = new ValueRange
+                {
+                    Values = new List<IList<object>> { new List<object> { computerName } }
+                };
+                sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, updateRange, new SpreadsheetsUpdateValuesRequest
+                {
+                    ValueInputOption = SpreadsheetsUpdateValuesRequest.ValueInputOptionEnum.RAW
+                }).Execute();
+            }
+        }
+
         private int GetLastRow(SheetsService sheetsService, string spreadsheetId, string sheetName)
         {
             var response = sheetsService.Spreadsheets.Values.Get(spreadsheetId, $"{sheetName}!A:A").Execute();
