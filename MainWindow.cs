@@ -634,6 +634,19 @@ namespace Simple_Button
 
 
         }
+        private int GetLastRow(SheetsService sheetsService, string spreadsheetId, string sheetName)
+        {
+            var response = sheetsService.Spreadsheets.Values.Get(spreadsheetId, $"{sheetName}!A:A").Execute();
+            if (response.Values != null)
+            {
+                return response.Values.Count + 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
         private string GetLastRowValue(SheetsService sheetsService, string spreadsheetId, string sheetName)
         {
             // Define the range of cells to check
@@ -733,44 +746,125 @@ namespace Simple_Button
             System.Diagnostics.Debug.WriteLine("renderTimes: " + string.Join(",", renderTimes));
             return Tuple.Create(datetimeFromLog, renderTimes);
 
-        }      
+        }
 
+        //private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
+        //{
+        //    // Create a new instance of the Sheets API service
+        //    //string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
+        //    var credPath = GetCredentialsPath();
+        //    var sheetsService = new SheetsService(new BaseClientService.Initializer
+        //    {
+        //        HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
+        //        ApplicationName = "GPUMonitor"
+        //    });
+        //    // Get the sheet ID
+        //    var sheetId = GetSheetId(sheetsService, spreadsheetId, sheetName);
+        //    // Create a new request body
+        //    var requestBody = new BatchUpdateValuesRequest();
+        //    requestBody.ValueInputOption = "USER_ENTERED";
+        //    requestBody.Data = new List<ValueRange>();
+        //    // Add the datetimeFromLog values and render times values 25-Jan-23 18:53:22' 
+        //    //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).ToList();
+        //    //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
+        //    datetimeFromLog = datetimeFromLog.Select(x => DateTime.Parse(x).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
+        //    System.Diagnostics.Debug.WriteLine("datetimeFromLog2: " + string.Join(",", datetimeFromLog));
+        //    List<IList<object>> values = new List<IList<object>>();
+        //    for (int i = 0; i < datetimeFromLog.Count; i++)
+        //    {
+        //        values.Add(new List<object>() { datetimeFromLog[i], renderTimes[i] });
+        //    }
+        //    // call the FormatCells function before the request to update the cell values
+        //    FormatCells(spreadsheetId, sheetName, datetimeFromLog.Count);
+        //    requestBody.Data.Add(new ValueRange
+        //    {
+        //        Range = $"{sheetName}!A1:B{datetimeFromLog.Count}",
+        //        Values = values
+        //    });
+        //    // Execute the request
+        //    var request = sheetsService.Spreadsheets.Values.BatchUpdate(requestBody, spreadsheetId);
+        //    request.Execute();
+        //}
         private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
         {
             // Create a new instance of the Sheets API service
-            //string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
             var credPath = GetCredentialsPath();
             var sheetsService = new SheetsService(new BaseClientService.Initializer
             {
                 HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
                 ApplicationName = "GPUMonitor"
             });
-            // Get the sheet ID
+
+            // Get the sheet ID and the last row in the sheet            
             var sheetId = GetSheetId(sheetsService, spreadsheetId, sheetName);
+            int lastRow;
+            var response = sheetsService.Spreadsheets.Values.Get(spreadsheetId, $"{sheetName}!A:A").Execute();
+            if (response.Values != null)
+            {
+                lastRow = response.Values.Count + 1;
+            }
+            else
+            {
+                lastRow = 1;
+            }
+            // Add new rows to sheet
+            int numRows = datetimeFromLog.Count;
+            AddRows(sheetsService, spreadsheetId, sheetName, lastRow, numRows);
+
             // Create a new request body
             var requestBody = new BatchUpdateValuesRequest();
             requestBody.ValueInputOption = "USER_ENTERED";
             requestBody.Data = new List<ValueRange>();
-            // Add the datetimeFromLog values and render times values 25-Jan-23 18:53:22' 
-            //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).ToList();
-            //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
+
+            // Convert the datetimeFromLog values and render times values
             datetimeFromLog = datetimeFromLog.Select(x => DateTime.Parse(x).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
-            System.Diagnostics.Debug.WriteLine("datetimeFromLog2: " + string.Join(",", datetimeFromLog));
+
+            // Create the list of values to be added to the sheet
             List<IList<object>> values = new List<IList<object>>();
             for (int i = 0; i < datetimeFromLog.Count; i++)
             {
                 values.Add(new List<object>() { datetimeFromLog[i], renderTimes[i] });
-            }
-            // call the FormatCells function before the request to update the cell values
-            FormatCells(spreadsheetId, sheetName, datetimeFromLog.Count);
+            }            
+
+            // Add the values to the sheet
             requestBody.Data.Add(new ValueRange
             {
-                Range = $"{sheetName}!A1:B{datetimeFromLog.Count}",
+                Range = $"{sheetName}!A{lastRow}:B{lastRow + datetimeFromLog.Count - 1}",
                 Values = values
             });
+
             // Execute the request
             var request = sheetsService.Spreadsheets.Values.BatchUpdate(requestBody, spreadsheetId);
             request.Execute();
+
+            // Format the cells
+            FormatCells(spreadsheetId, sheetName, lastRow + datetimeFromLog.Count);
+        }
+        private void AddRows(SheetsService sheetsService, string spreadsheetId, string sheetName, int startRow, int numRows)
+        {
+            var requests = new List<Request>();
+            var insertDimensionRequest = new Request
+            {
+                InsertDimension = new InsertDimensionRequest
+                {
+                    Range = new DimensionRange
+                    {
+                        SheetId = int.Parse(GetSheetId(sheetsService, spreadsheetId, sheetName)),
+                        Dimension = "ROWS",
+                        StartIndex = startRow - 1,
+                        EndIndex = startRow + numRows - 1
+                    },
+                    InheritFromBefore = startRow == 1 ? false : true
+                }
+            };
+            requests.Add(insertDimensionRequest);
+
+            var requestBody = new BatchUpdateSpreadsheetRequest
+            {
+                Requests = requests
+            };
+
+            sheetsService.Spreadsheets.BatchUpdate(requestBody, spreadsheetId).Execute();
         }
 
 
