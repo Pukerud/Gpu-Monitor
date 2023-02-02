@@ -28,6 +28,9 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using static System.ComponentModel.Design.ObjectSelectorEditor;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
+using System.Windows;
+using Newtonsoft.Json;
 
 //using Google.GoogleApiException;
 
@@ -58,13 +61,28 @@ namespace Simple_Button
         private string? GsheetShare { get; set; }
         private System.Threading.Timer timer;
         private bool isTimerCreated = false;
-
+        //private double Left = 0;
+        //private double Top = 0;
+        //private const string LeftKey = "Left";
+        //private const string TopKey = "Top";
 
         public MainWindow()
         {
-            InitializeComponent();            
+            InitializeComponent();
+            // Check if the saved window position is valid
+            //if (Properties.Settings.Default.WindowLocation != null)
+            //{
+            //    // Set the window location to the saved position
+            //    this.Left = Properties.Settings.Default.WindowLocation.X;
+            //    this.Top = Properties.Settings.Default.WindowLocation.Y;
+            //}
+            //else
+            //{
+            //    // Set the window location to the default position (centered of the screen)
+            //    this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            //}
             this.StartPosition = FormStartPosition.CenterParent;
-            this.Text = "Pukerud's GPU Monitor Running On: " + Environment.MachineName;
+            this.Text = "Pukerud's GPU Monitor Running On: " + Environment.MachineName; // + " (Build Version: " + Assembly.GetExecutingAssembly().GetName().Version.ToString() + ")";
             Console.WriteLine("starthere");
             //if (DateTime.Now.Day == 20 && DateTime.Now.Month == 1)
             //{
@@ -118,8 +136,13 @@ namespace Simple_Button
             //if (checkBox2.Checked) autorunSheet(null, null);
             //this.button2 = new System.Windows.Forms.Button();
 
-        }        
-
+        }
+        //private void Window_Closed(object sender, EventArgs e)
+        //{
+        //    // Save the window position when the window is closed
+        //    Properties.Settings.Default.WindowLocation = new System.Drawing.Point((int)this.Left, (int)this.Top);
+        //    Properties.Settings.Default.Save();
+        //}
         //private void autorunSheet(object sender, EventArgs e)
         //{
         //    if (checkBox2.Checked)
@@ -134,8 +157,8 @@ namespace Simple_Button
 
         private void TimerCallback(Object o)
         {
-            if (checkBox2.Checked)
-                button7_Click(null, null);
+            if (checkBox2.Checked)                
+            button7_Click(null, null);          
         }
 
 
@@ -348,8 +371,7 @@ namespace Simple_Button
             _sleepTime = (int?)(Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "CheckTimer", null) as int?) ?? 0;
             object sleepTime2 = Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "DobbelCheck", null);
             _sleepTime2 = (sleepTime2 != null && sleepTime2 is int) ? (int)sleepTime2 : 0;
-
-
+            GsheetShare = (string?)Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "GsheetShare", "");
             if (_smtpServer == "" || _emailSmtpServerPort == 0 || _smtpUser == "" || _smtpPassword == "" || _mailTo == "" || _mailFrom == "" || _smtpServer == null || _smtpUser == null || _smtpPassword == null || _mailTo == null || _mailFrom == null)
             {
                 _settingsValid = false;
@@ -380,6 +402,29 @@ namespace Simple_Button
             OpenRndrLog();
 
         }
+        private void DeleteAllSpreadsheets(DriveService driveService)
+        {
+            var request = driveService.Files.List();
+            request.Q = "mimeType='application/vnd.google-apps.spreadsheet'";
+            var files = request.Execute();
+
+            foreach (var file in files.Files)
+            {
+                driveService.Files.Delete(file.Id).Execute();
+            }
+        }
+        private void DeleteSpreadsheetsOwnedByServiceAccount(DriveService driveService, string serviceAccountEmail)
+        {
+            var request = driveService.Files.List();
+            request.Q = $"mimeType='application/vnd.google-apps.spreadsheet' and '{serviceAccountEmail}' in owners";
+            var files = request.Execute();
+
+            foreach (var file in files.Files)
+            {
+                driveService.Files.Delete(file.Id).Execute();
+            }
+        }
+
         private string GetSpreadsheetId(SheetsService service, string spreadsheetName)
         {
             try
@@ -393,13 +438,15 @@ namespace Simple_Button
                     HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(DriveService.Scope.Drive),
                     ApplicationName = "GPUMonitor"
                 });
+                System.Diagnostics.Debug.WriteLine("spreadsheetName " + spreadsheetName);
                 var request = driveService.Files.List();
                 request.Q = "mimeType='application/vnd.google-apps.spreadsheet'";
                 var files = request.Execute();
-
-                if (files.Files.Count > 0)
+                System.Diagnostics.Debug.WriteLine("File List: " + string.Join(",", files.Files.Select(f => f.Name)));
+                var targetFile = files.Files.FirstOrDefault(f => f.Name == spreadsheetName);
+                if (targetFile != null)
                 {
-                    return files.Files[0].Id;
+                    return targetFile.Id;
                 }
                 else
                 {
@@ -421,7 +468,7 @@ namespace Simple_Button
         private void CheckAndCreateSheet()
         {
             // Hard-coded spreadsheet name and sheet name
-            string spreadsheetName = "Rndr-Stat";
+            string spreadsheetName = "Rndr-Stats";
             string sheetName = System.Environment.MachineName;
 
             // Create an instance of the SheetsService
@@ -439,9 +486,9 @@ namespace Simple_Button
             {
                 // If the spreadsheet does not exist, create it
                 spreadsheetId = CreateSpreadsheet(sheetsService, spreadsheetName);
-                System.Diagnostics.Debug.WriteLine("Created Spreadsheet" + spreadsheetId);
+                System.Diagnostics.Debug.WriteLine("CheckAndCreat: Created Spreadsheet" + spreadsheetId);
             }
-            System.Diagnostics.Debug.WriteLine("Spreadsheet exists" + spreadsheetId);
+            System.Diagnostics.Debug.WriteLine("CheckAndCreat: Spreadsheet exists " + spreadsheetId);
 
             // Check if the sheet with the current computer name exists
             var sheetId = GetSheetId(sheetsService, spreadsheetId, sheetName);
@@ -449,9 +496,9 @@ namespace Simple_Button
             {
                 // If the sheet does not exist, create it
                 sheetId = CreateSheet(sheetsService, spreadsheetId, sheetName);
-                System.Diagnostics.Debug.WriteLine("Created sheet");
+                System.Diagnostics.Debug.WriteLine("CheckAndCreat: Created sheet");
             }
-            System.Diagnostics.Debug.WriteLine("Sheet exists");
+            System.Diagnostics.Debug.WriteLine("CheckAndCreat: Sheet exists");
         }
 
         private string CreateSpreadsheet(SheetsService sheetsService, string spreadsheetName)
@@ -475,6 +522,7 @@ namespace Simple_Button
 
             // Set permissions for the creator and an additional email address
             var emailAddress = GsheetShare;
+            System.Diagnostics.Debug.WriteLine("CreateSpreadsheet emailshare: " + GsheetShare);
             var permission = new Permission
             {
                 Type = "user",
@@ -626,7 +674,16 @@ namespace Simple_Button
 
         private void button5_Click(object sender, EventArgs e)
         {
-            TDRDelay();
+            //TDRDelay();
+            var credPath = GetCredentialsPath();
+            // Creat a new instance of the DriveService
+            var driveService = new DriveService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(DriveService.Scope.Drive),
+                ApplicationName = "GPUMonitor"
+            });
+            //DeleteAllSpreadsheets(driveService);
+            DeleteSpreadsheetsOwnedByServiceAccount(driveService, "rndr-714@rndr-stats.iam.gserviceaccount.com");
         }
 
         private void button6_Click(object sender, EventArgs e)
@@ -639,8 +696,12 @@ namespace Simple_Button
         }
 
         private void button7_Click(object sender, EventArgs e)
-        {
+        {            
             CheckAndCreateSheet();
+            textBox1.Invoke((MethodInvoker)delegate
+            {
+                textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Checking Rndr_log.txt....\r\n");
+            });
             string spreadsheetName = "Rndr-Stats";
 
             // sheetName
@@ -659,68 +720,231 @@ namespace Simple_Button
 
             // Create STATS SHEET
             CreateSheetIfNotExists(sheetsService, spreadsheetId);
-            // Add computer/sheetname to Stats page
-            CheckAndAddComputerName( spreadsheetName, sheetName );
-
+            System.Diagnostics.Debug.WriteLine("CreatSheetIfNotExist done");
+            // Add computer/sheetname to Stats page            
+            bool computerNameExists = CheckComputerNameExists(sheetsService, spreadsheetId, sheetName, 5);
+            System.Diagnostics.Debug.WriteLine("CheckComputerNameExists done");
+            if (!computerNameExists)
+            {
+                // If the current computer name does not exist, add it to the first empty cell on row E, after row E4.
+                AddComputerName(sheetsService, spreadsheetId, sheetName, 5);
+            }
+            System.Diagnostics.Debug.WriteLine("Computername exist done");
+            //Add Formula to Row F missing adding formulas for every new machine so you have to copy paste the formulas manualy from F5:K5. Also missing headers.
+            AddValuesToCells(sheetsService, spreadsheetId);
+            //AddFormulaToCell(sheetsService, spreadsheetId, "Stats");
+            AddFormulasToCells(sheetsService, spreadsheetId, sheetName , 5);
             // Call the lastrow of gheet          
             var lastRow = GetLastRowValue(sheetsService, spreadsheetId, sheetName);
-            var extractedData = ExtractRenderTime(lastRow);            
+            var extractedData = ExtractRenderTime(lastRow);
 
             if (extractedData.Item1 != null && extractedData.Item1.Count > 0 && extractedData.Item2 != null && extractedData.Item2.Count > 0)
             {
                 AddRenderTime(extractedData.Item1, extractedData.Item2, spreadsheetId, sheetName);
+                textBox1.Invoke((MethodInvoker)delegate
+                {
+                    textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Added RenderTime to " + sheetName + "\r\n");
+                });
             }
 
         }
-        public static void CheckAndAddComputerName(string spreadsheetName, string computerName)
+        private static bool CheckComputerNameExists(SheetsService sheetsService, string spreadsheetId, string computerName, int column)
         {
-            var credPath = GetCredentialsPath();
-            var sheetsService = new SheetsService(new BaseClientService.Initializer
+            try
             {
-                HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
-                ApplicationName = "GPUMonitor"
-            });
-
-            var spreadsheetId = GetSpreadsheetId(sheetsService, spreadsheetName);
-
-            var sheetId = GetSheetId(sheetsService, spreadsheetId, "Stats");
-            if (sheetId == null)
-            {
-                return;
-            }
-
-            var range = "Stats!E5:E";
-            var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
-            var response = request.Execute();
-            var values = response.Values;
-            if (values == null)
-            {
-                return;
-            }
-
-            var computerNameExists = false;
-            foreach (var row in values)
-            {
-                if (row.Count > 0 && (string)row[0] == computerName)
+                var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Stats!E:E");
+                //request.Timeout = TimeSpan.FromSeconds(5);
+                ValueRange response = request.Execute();
+                IList<IList<Object>> values = response.Values;
+                if (values != null && values.Count > 0)
                 {
-                    computerNameExists = true;
-                    break;
+                    foreach (var row in values)
+                    {
+                        if (row.Contains(computerName))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Handle the exception
+                ErrorForm errorForm = new ErrorForm(ex.Message);
+                errorForm.ShowDialog();
+                Console.WriteLine("Request Timed Out: " + ex.Message);
+                return false;
+            }
+        }
+        // working!!!!
+        //private static void AddFormulasToCells(SheetsService sheetsService, string spreadsheetId, string computerName)
+        //{
+        //    var range = $"{computerName}!F5:K5";
+        //    System.Diagnostics.Debug.WriteLine("Trying to add Formulas to sheet. " + range);
+        //    var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
+        //    var response = request.Execute();
+        //    System.Diagnostics.Debug.WriteLine("Response values is null: " + (response.Values == null));
+
+        //    if (response.Values == null)
+        //    {
+        //        var formulas = new List<IList<object>>
+        //        {
+        //        new List<object> { "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1),2)",
+        //                           "=ROUND(F5/60,2)",
+        //                           "=ROUND(G5/60,2)",
+        //                           "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY()-1,INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY())/60/60,2)",
+        //                           "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY() - WEEKDAY(TODAY(), 2) - 7,INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY() - WEEKDAY(TODAY(), 2) - 1)/60/60,2)",
+        //                           "=INDEX(INDIRECT(E5&\"!A:A\"),MATCH(1,INDIRECT(E5&\"!A:A\"),-1))"
+        //             }
+        //         };
+        //        var valueRange = new ValueRange { Values = formulas };
+        //        var updateRequest = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
+        //        updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+        //        var updateResponse = updateRequest.Execute();
+        //        System.Diagnostics.Debug.WriteLine("Formulas update response: " + updateResponse.ToString());
+        //    }
+        //}
+        private static bool AddValuesToCells(SheetsService sheetsService, string spreadsheetId)
+        {
+            try
+            {
+                var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Stats!F3");
+                ValueRange response = request.Execute();
+                IList<IList<Object>> values = response.Values;
+
+                if (values == null || values[0][0].ToString() == "")
+                {
+                    var valuesToInsert = new List<IList<Object>>
+            {
+                new List<Object> {"Today"},
+                new List<Object> {"Seconds", "Minutes", "Hours", "Yesterday (h)", "Last Week(h)", "Last Render"}
+            };
+
+                    var updateRequest = sheetsService.Spreadsheets.Values.Update(new ValueRange
+                    {
+                        MajorDimension = "ROWS",
+                        Range = "Stats!F3:K4",
+                        Values = valuesToInsert
+                    }, spreadsheetId, "Stats!F3:K4");
+                    updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                    updateRequest.Execute();
+                }
+
+                return true;
+            }
+            catch (TaskCanceledException ex)
+            {
+                ErrorForm errorForm = new ErrorForm(ex.Message);
+                errorForm.ShowDialog();
+                Console.WriteLine("Request Timed Out: " + ex.Message);
+                return false;
+            }
+        }
+
+
+        private static bool AddFormulasToCells(SheetsService sheetsService, string spreadsheetId, string computerName, int row)
+        {
+            try
+            {
+                var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Stats!E:E");
+                ValueRange response = request.Execute();
+                IList<IList<Object>> values = response.Values;
+                System.Diagnostics.Debug.WriteLine("Response values: " + JsonConvert.SerializeObject(response.Values));
+                if (values != null && values.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("Value not null or count 0");
+                    int currentRow = -1;
+                    bool found = false;
+                    foreach (var valueRow in values)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Values in current row: " + JsonConvert.SerializeObject(valueRow));
+                        currentRow++;
+                        if (valueRow.Contains(computerName))
+                        {
+                            row = currentRow + 1;
+                            found = true;
+                            System.Diagnostics.Debug.WriteLine("Found computername. " + found);
+                            break;
+                        }
+                    }
+
+                    if (found)
+                    {
+                        var formulas = new List<Object> {
+                                     "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1),2)",
+                                     "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1)/60,2)",
+                                     "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1)/60/60,2)",
+                                     "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY()-1,INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY())/60/60,2)",
+                                     "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY() - WEEKDAY(TODAY(), 2) - 7,INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY() - WEEKDAY(TODAY(), 2) - 1)/60/60,2)",
+                                     "=INDEX(INDIRECT(E5&\"!A:A\"),MATCH(1,INDIRECT(E5&\"!A:A\"),-1))"
+                         };
+
+                        for (int i = 0; i < formulas.Count; i++)
+                        {
+                            formulas[i] = formulas[i].ToString().Replace("E5", $"E{row}");
+                        }
+
+                        var updateRequest = sheetsService.Spreadsheets.Values.Update(new ValueRange
+                        {
+                            MajorDimension = "ROWS",
+                            Range = $"Stats!F{row}:K{row}",
+                            Values = new List<IList<Object>> {
+                              formulas
+                             }
+                        
+                        }, spreadsheetId, "Stats!F" + row + ":K" + row);
+                        updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                        updateRequest.Execute();
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
                 }
             }
-
-            if (!computerNameExists)
+            catch (TaskCanceledException ex)
             {
-                var updateRange = "Stats!E" + (values.Count + 5);
-                var valueRange = new ValueRange
-                {
-                    Values = new List<IList<object>> { new List<object> { computerName } }
-                };
-                sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, updateRange, new SpreadsheetsUpdateValuesRequest
-                {
-                    ValueInputOption = SpreadsheetsUpdateValuesRequest.ValueInputOptionEnum.RAW
-                }).Execute();
+                // Handle the exception
+                ErrorForm errorForm = new ErrorForm(ex.Message);
+                errorForm.ShowDialog();
+                Console.WriteLine("Request Timed Out: " + ex.Message);
+                return false;
             }
         }
+
+        private static void AddComputerName(SheetsService sheetsService, string spreadsheetId, string computerName, int column)
+        {
+            System.Diagnostics.Debug.WriteLine("Trying to add Computername to sheet.");
+            int emptyRow = GetFirstEmptyRow(sheetsService, spreadsheetId, column);
+            System.Diagnostics.Debug.WriteLine("the emptyrow is " +emptyRow);
+            var range = $"Stats!E{emptyRow}";
+            var valueRange = new ValueRange
+            {
+                Values = new List<IList<object>> { new List<object> { computerName } }
+            };
+            var updateRequest = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
+            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            updateRequest.Execute();
+
+        }
+        private static int GetFirstEmptyRow(SheetsService sheetsService, string spreadsheetId, int column)
+        {
+            SpreadsheetsResource.ValuesResource.GetRequest request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Stats!E4:E");
+            ValueRange response = request.Execute();
+            IList<IList<Object>> values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                return values.Count + 4;
+            }
+            return 5;
+        }
+
 
         private int GetLastRow(SheetsService sheetsService, string spreadsheetId, string sheetName)
         {
@@ -835,44 +1059,7 @@ namespace Simple_Button
             return Tuple.Create(datetimeFromLog, renderTimes);
 
         }
-
-        //private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
-        //{
-        //    // Create a new instance of the Sheets API service
-        //    //string credPath = "C:\\dev\\SimpleButton\\Simple Button\\bin\\Debug\\net7.0-windows\\credentials.json";
-        //    var credPath = GetCredentialsPath();
-        //    var sheetsService = new SheetsService(new BaseClientService.Initializer
-        //    {
-        //        HttpClientInitializer = GoogleCredential.FromFile(credPath).CreateScoped(SheetsService.Scope.Spreadsheets),
-        //        ApplicationName = "GPUMonitor"
-        //    });
-        //    // Get the sheet ID
-        //    var sheetId = GetSheetId(sheetsService, spreadsheetId, sheetName);
-        //    // Create a new request body
-        //    var requestBody = new BatchUpdateValuesRequest();
-        //    requestBody.ValueInputOption = "USER_ENTERED";
-        //    requestBody.Data = new List<ValueRange>();
-        //    // Add the datetimeFromLog values and render times values 25-Jan-23 18:53:22' 
-        //    //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).ToList();
-        //    //datetimeFromLog = datetimeFromLog.Select(x => DateTime.ParseExact(x, "dd-MMM-yy HH:mm:ss", CultureInfo.InvariantCulture).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
-        //    datetimeFromLog = datetimeFromLog.Select(x => DateTime.Parse(x).ToString("yyyy-MM-dd HH:mm:ss")).ToList();
-        //    System.Diagnostics.Debug.WriteLine("datetimeFromLog2: " + string.Join(",", datetimeFromLog));
-        //    List<IList<object>> values = new List<IList<object>>();
-        //    for (int i = 0; i < datetimeFromLog.Count; i++)
-        //    {
-        //        values.Add(new List<object>() { datetimeFromLog[i], renderTimes[i] });
-        //    }
-        //    // call the FormatCells function before the request to update the cell values
-        //    FormatCells(spreadsheetId, sheetName, datetimeFromLog.Count);
-        //    requestBody.Data.Add(new ValueRange
-        //    {
-        //        Range = $"{sheetName}!A1:B{datetimeFromLog.Count}",
-        //        Values = values
-        //    });
-        //    // Execute the request
-        //    var request = sheetsService.Spreadsheets.Values.BatchUpdate(requestBody, spreadsheetId);
-        //    request.Execute();
-        //}
+        
         private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
         {
             // Create a new instance of the Sheets API service
@@ -1023,7 +1210,7 @@ namespace Simple_Button
         {
             Properties.Settings.Default.AutoSheet = checkBox2.Checked;
             Properties.Settings.Default.Save();
-            int minutes = 720; // 12 hours is 720 min etc
+            int minutes = 310; // 12 hours is 720 min etc
 
             if (checkBox2.Checked && !isTimerCreated)
             {
