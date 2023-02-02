@@ -730,14 +730,14 @@ namespace Simple_Button
                 AddComputerName(sheetsService, spreadsheetId, sheetName, 5);
             }
             System.Diagnostics.Debug.WriteLine("Computername exist done");
-            //Add Formula to Row F missing adding formulas for every new machine so you have to copy paste the formulas manualy from F5:K5. Also missing headers.
+            //Add Text to Sheet Stats
             AddValuesToCells(sheetsService, spreadsheetId);
-            //AddFormulaToCell(sheetsService, spreadsheetId, "Stats");
+            //Add Formulas to Sheet Stats
             AddFormulasToCells(sheetsService, spreadsheetId, sheetName , 5);
             // Call the lastrow of gheet          
             var lastRow = GetLastRowValue(sheetsService, spreadsheetId, sheetName);
             var extractedData = ExtractRenderTime(lastRow);
-
+            //Add Time and RenderTimes to Sheet
             if (extractedData.Item1 != null && extractedData.Item1.Count > 0 && extractedData.Item2 != null && extractedData.Item2.Count > 0)
             {
                 AddRenderTime(extractedData.Item1, extractedData.Item2, spreadsheetId, sheetName);
@@ -776,35 +776,7 @@ namespace Simple_Button
                 Console.WriteLine("Request Timed Out: " + ex.Message);
                 return false;
             }
-        }
-        // working!!!!
-        //private static void AddFormulasToCells(SheetsService sheetsService, string spreadsheetId, string computerName)
-        //{
-        //    var range = $"{computerName}!F5:K5";
-        //    System.Diagnostics.Debug.WriteLine("Trying to add Formulas to sheet. " + range);
-        //    var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
-        //    var response = request.Execute();
-        //    System.Diagnostics.Debug.WriteLine("Response values is null: " + (response.Values == null));
-
-        //    if (response.Values == null)
-        //    {
-        //        var formulas = new List<IList<object>>
-        //        {
-        //        new List<object> { "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1),2)",
-        //                           "=ROUND(F5/60,2)",
-        //                           "=ROUND(G5/60,2)",
-        //                           "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY()-1,INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY())/60/60,2)",
-        //                           "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY() - WEEKDAY(TODAY(), 2) - 7,INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY() - WEEKDAY(TODAY(), 2) - 1)/60/60,2)",
-        //                           "=INDEX(INDIRECT(E5&\"!A:A\"),MATCH(1,INDIRECT(E5&\"!A:A\"),-1))"
-        //             }
-        //         };
-        //        var valueRange = new ValueRange { Values = formulas };
-        //        var updateRequest = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
-        //        updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-        //        var updateResponse = updateRequest.Execute();
-        //        System.Diagnostics.Debug.WriteLine("Formulas update response: " + updateResponse.ToString());
-        //    }
-        //}
+        }       
         private static bool AddValuesToCells(SheetsService sheetsService, string spreadsheetId)
         {
             try
