@@ -31,6 +31,7 @@ using System.Reflection;
 using Newtonsoft.Json.Linq;
 using System.Windows;
 using Newtonsoft.Json;
+using System.Text;
 
 //using Google.GoogleApiException;
 
@@ -738,7 +739,16 @@ namespace Simple_Button
             AddFormulasToCells(sheetsService, spreadsheetId, sheetName , 5);
             // Call the lastrow of gheet          
             var lastRow = GetLastRowValue(sheetsService, spreadsheetId, sheetName);
-            var extractedData = ExtractRenderTime(lastRow);
+            Tuple<List<string>, List<string>> extractedData;
+            // Run fast or slow extraction base on how old lastRow is            
+            if (lastRow == "2000-01-01 00:00:00")
+            {
+                extractedData = ExtractRenderTime(lastRow);
+            }
+            else
+            {
+                extractedData = ExtractRenderTimefast(lastRow);
+            }
             //Add Time and RenderTimes to Sheet
             if (extractedData.Item1 != null && extractedData.Item1.Count > 0 && extractedData.Item2 != null && extractedData.Item2.Count > 0)
             {
@@ -748,7 +758,6 @@ namespace Simple_Button
                     textBox1.AppendText("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] Added RenderTime to " + sheetName + "\r\n");
                 });
             }
-
         }
         private static bool CheckComputerNameExists(SheetsService sheetsService, string spreadsheetId, string computerName, int column)
         {
@@ -959,7 +968,9 @@ namespace Simple_Button
             if (values == null || values.Count == 0)
             {
                 System.Diagnostics.Debug.WriteLine("The range is empty.");
-                lastRow = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString();
+                //lastRow = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).ToString();
+                lastRow = "2000-01-01 00:00:00";
+                System.Diagnostics.Debug.WriteLine("Last row value: " + lastRow);
                 return lastRow;
             }
             else
@@ -1037,61 +1048,76 @@ namespace Simple_Button
             return Tuple.Create(datetimeFromLog, renderTimes);
 
         }
-        //private Tuple<List<string>, List<string>> ExtractRenderTime(string lastRow)
-        //{
-        //    var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
-        //    string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
-        //    DateTime lastRenderTime;
-        //    if (string.IsNullOrEmpty(lastRow))
-        //    {
-        //        lastRenderTime = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-        //    }
-        //    else
-        //    {
-        //        string[] formats = { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd H:mm:ss" };
-        //        if (!DateTime.TryParseExact(lastRow, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out lastRenderTime))
-        //        {
-        //            // handle the error
-        //        }
-        //    }
-        //    List<string> renderTimes = new List<string>();
-        //    List<string> datetimeFromLog = new List<string>(); //initialize variable
-        //    try
-        //    {
-        //        using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-        //        {
-        //            stream.Seek(stream.Length, SeekOrigin.Begin); // Go to the end of the file
-        //            using (var reader = new StreamReader(stream))
-        //            {
-        //                string line;
-        //                while ((line = reader.ReadLine()) != null)
-        //                {
-        //                    Match match = Regex.Match(line, pattern);
-        //                    if (match.Success)
-        //                    {
-        //                        System.Diagnostics.Debug.WriteLine("Matched line: " + line);
-        //                        DateTime renderTime = DateTime.Parse(match.Groups[1].Value);
-        //                        if (renderTime > lastRenderTime)
-        //                        {
-        //                            renderTimes.Add(Regex.Replace(match.Groups[2].Value, @"render time ", ""));
-        //                            datetimeFromLog.Add(renderTime.ToString());
-        //                            //System.Diagnostics.Debug.WriteLine("Added render time: " + match.Groups[2].Value);
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (IOException e)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);
-        //    }
+        private Tuple<List<string>, List<string>> ExtractRenderTimefast(string lastRow)
+        {
+            var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
+            string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
+            DateTime lastRenderTime;
+            if (string.IsNullOrEmpty(lastRow))
+            {
+                lastRenderTime = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                string[] formats = { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd H:mm:ss" };
+                if (!DateTime.TryParseExact(lastRow, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out lastRenderTime))
+                {
+                    // handle the error
+                }
+            }
+            List<string> renderTimes = new List<string>();
+            List<string> datetimeFromLog = new List<string>();  //initialize variable
+            try
+            {
+                using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(stream))
+                              
+                {
+                    var lineCount = 0;                    
+                    {
+                        while (reader.ReadLine() != null)
+                        {
+                            lineCount++;
+                        }
+                    }
+                    if (lineCount > 1000)
+                    {                        
+                        {
+                            stream.Seek(-(1000 * (Environment.NewLine.Length + 100)), SeekOrigin.End);
+                            reader.ReadLine();
+                            string line;
+                            while ((line = reader.ReadLine()) != null)
+                            {
+                                Match match = Regex.Match(line, pattern);
+                                if (match.Success)
+                                {
+                                    System.Diagnostics.Debug.WriteLine("Matched line: " + line);
+                                    DateTime renderTime = DateTime.Parse(match.Groups[1].Value);
 
-        //    System.Diagnostics.Debug.WriteLine("datetimeFromLog: " + string.Join(",", datetimeFromLog));
-        //    System.Diagnostics.Debug.WriteLine("renderTimes: " + string.Join(",", renderTimes));
-        //    return Tuple.Create(datetimeFromLog, renderTimes);
-        //}
+                                    if (renderTime > lastRenderTime)
+                                    {
+                                        renderTimes.Add(match.Groups[2].Value);
+                                        renderTimes = renderTimes.Select(x => Regex.Replace(x, @"render time ", "")).ToList();
+                                        datetimeFromLog.Add(renderTime.ToString());
+                                        //System.Diagnostics
 
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);
+            }
+
+            System.Diagnostics.Debug.WriteLine("FASTdatetimeFromLog: " + string.Join(",", datetimeFromLog));
+            System.Diagnostics.Debug.WriteLine("FASTrenderTimes: " + string.Join(",", renderTimes));
+            return Tuple.Create(datetimeFromLog, renderTimes);
+
+        }
         private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
         {
             // Create a new instance of the Sheets API service
