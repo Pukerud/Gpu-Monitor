@@ -23,6 +23,7 @@ namespace Simple_Button
         public int CheckTimer { get; set; }
         public int DobbelCheck { get; set; }
         public string GsheetShare { get; set; }
+        public int GsheetTimer { get; set; }
 
         public SettingsForm()
         {
@@ -47,6 +48,7 @@ namespace Simple_Button
             MailTo = txtMailTo.Text;
             MailFrom = txtMailFrom.Text;
             GsheetShare = txtGsheetShare.Text;
+            //GsheetTimer = txtGsheetTimer.Text;
             try
             {
                 if (!string.IsNullOrEmpty(txtSmtpServerPort.Text))
@@ -64,6 +66,10 @@ namespace Simple_Button
                 if (!string.IsNullOrEmpty(txtDobbelCheck.Text))
                 {
                     DobbelCheck = int.Parse(txtDobbelCheck.Text);
+                }
+                if (!string.IsNullOrEmpty(txtGsheetTimer.Text))
+                {
+                    GsheetTimer = int.Parse(txtGsheetTimer.Text);
                 }
             }
             catch (FormatException ex)
@@ -86,6 +92,7 @@ namespace Simple_Button
             key.SetValue("EmailTimeout", EmailTimeout);
             key.SetValue("CheckTimer", CheckTimer);
             key.SetValue("DobbelCheck", DobbelCheck);
+            key.SetValue("GsheetTimer", GsheetTimer);
 
             this.Close();
         }
@@ -129,6 +136,7 @@ namespace Simple_Button
                     txtMailTo.Text = MailTo;
                     txtMailFrom.Text = MailFrom;
                     txtGsheetShare.Text = GsheetShare;
+                    //txtGsheetTimer.Text = GsheetTimer.ToString();
                     txtSmtpServer.Text = key.GetValue("SmtpServer").ToString();
                     txtSmtpServerPort.Text = key.GetValue("SmtpServerPort").ToString();
                     txtSmtpUser.Text = key.GetValue("SmtpUser").ToString();
@@ -139,6 +147,7 @@ namespace Simple_Button
                     txtCheckTimer.Text = key.GetValue("CheckTimer").ToString();
                     txtDobbelCheck.Text = key.GetValue("DobbelCheck").ToString();
                     txtGsheetShare.Text = key.GetValue("GsheetShare").ToString();
+                    txtGsheetTimer.Text = key.GetValue("GsheetTimer").ToString();
                 }
             }
         }
@@ -154,6 +163,11 @@ namespace Simple_Button
         }
 
         private void label10_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtGsheetTimer_TextChanged(object sender, EventArgs e)
         {
 
         }

@@ -50,6 +50,8 @@
             this.txtDobbelCheck = new System.Windows.Forms.TextBox();
             this.label10 = new System.Windows.Forms.Label();
             this.txtGsheetShare = new System.Windows.Forms.TextBox();
+            this.label11 = new System.Windows.Forms.Label();
+            this.txtGsheetTimer = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // SaveForm
@@ -248,12 +250,34 @@
             this.txtGsheetShare.Size = new System.Drawing.Size(190, 23);
             this.txtGsheetShare.TabIndex = 20;
             // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.label11.ForeColor = System.Drawing.SystemColors.ButtonFace;
+            this.label11.Location = new System.Drawing.Point(328, 107);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(76, 15);
+            this.label11.TabIndex = 21;
+            this.label11.Text = "Gsheet Timer";
+            // 
+            // txtGsheetTimer
+            // 
+            this.txtGsheetTimer.Location = new System.Drawing.Point(456, 99);
+            this.txtGsheetTimer.Name = "txtGsheetTimer";
+            this.txtGsheetTimer.PlaceholderText = "In Minuts";
+            this.txtGsheetTimer.Size = new System.Drawing.Size(81, 23);
+            this.txtGsheetTimer.TabIndex = 22;
+            this.txtGsheetTimer.TextChanged += new System.EventHandler(this.txtGsheetTimer_TextChanged);
+            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.ClientSize = new System.Drawing.Size(557, 220);
+            this.Controls.Add(this.txtGsheetTimer);
+            this.Controls.Add(this.label11);
             this.Controls.Add(this.txtGsheetShare);
             this.Controls.Add(this.label10);
             this.Controls.Add(this.txtDobbelCheck);
@@ -309,5 +333,7 @@
         private TextBox txtDobbelCheck;
         private Label label10;
         private TextBox txtGsheetShare;
+        private Label label11;
+        private TextBox txtGsheetTimer;
     }
 }

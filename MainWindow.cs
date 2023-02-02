@@ -61,6 +61,7 @@ namespace Simple_Button
         private string? GsheetShare { get; set; }
         private System.Threading.Timer timer;
         private bool isTimerCreated = false;
+        private int GsheetTimer = 10;
         //private double Left = 0;
         //private double Top = 0;
         //private const string LeftKey = "Left";
@@ -372,6 +373,7 @@ namespace Simple_Button
             object sleepTime2 = Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "DobbelCheck", null);
             _sleepTime2 = (sleepTime2 != null && sleepTime2 is int) ? (int)sleepTime2 : 0;
             GsheetShare = (string?)Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "GsheetShare", "");
+            GsheetTimer = (int?)Registry.GetValue("HKEY_CURRENT_USER\\Software\\GPUMonitor", "GsheetTimer", null) ?? 0;
             if (_smtpServer == "" || _emailSmtpServerPort == 0 || _smtpUser == "" || _smtpPassword == "" || _mailTo == "" || _mailFrom == "" || _smtpServer == null || _smtpUser == null || _smtpPassword == null || _mailTo == null || _mailFrom == null)
             {
                 _settingsValid = false;
@@ -843,7 +845,16 @@ namespace Simple_Button
 
                     if (found)
                     {
-                        var formulas = new List<Object> {
+                        var request2 = sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Stats!F"+row);
+                        ValueRange response2 = request2.Execute();
+                        IList<IList<Object>> values2 = response2.Values;
+                        System.Diagnostics.Debug.WriteLine("Values2: " + JsonConvert.SerializeObject(response2));
+                        //System.Diagnostics.Debug.WriteLine("count2: " + JsonConvert.SerializeObject(values2.Count));
+
+                        if (values2 == null || values2.Count < 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine("trying to write DATATATAT");
+                            var formulas = new List<Object> {
                                      "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1),2)",
                                      "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1)/60,2)",
                                      "=ROUND(SUMIFS(INDIRECT(E5&\"!B:B\"),INDIRECT(E5&\"!A:A\"),\">=\"&TODAY(),INDIRECT(E5&\"!A:A\"),\"<=\"&TODAY()+1)/60/60,2)",
@@ -852,22 +863,24 @@ namespace Simple_Button
                                      "=INDEX(INDIRECT(E5&\"!A:A\"),MATCH(1,INDIRECT(E5&\"!A:A\"),-1))"
                          };
 
-                        for (int i = 0; i < formulas.Count; i++)
-                        {
-                            formulas[i] = formulas[i].ToString().Replace("E5", $"E{row}");
-                        }
+                            for (int i = 0; i < formulas.Count; i++)
+                            {
+                                formulas[i] = formulas[i].ToString().Replace("E5", $"E{row}");
+                            }
 
-                        var updateRequest = sheetsService.Spreadsheets.Values.Update(new ValueRange
-                        {
-                            MajorDimension = "ROWS",
-                            Range = $"Stats!F{row}:K{row}",
-                            Values = new List<IList<Object>> {
+                            var updateRequest = sheetsService.Spreadsheets.Values.Update(new ValueRange
+                            {
+                                MajorDimension = "ROWS",
+                                Range = $"Stats!F{row}:K{row}",
+                                Values = new List<IList<Object>> {
                               formulas
                              }
-                        
-                        }, spreadsheetId, "Stats!F" + row + ":K" + row);
-                        updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-                        updateRequest.Execute();
+
+                            }, spreadsheetId, "Stats!F" + row + ":K" + row);
+                            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                            updateRequest.Execute();
+                            
+                        }
                         return true;
                     }
                     else
@@ -1000,15 +1013,8 @@ namespace Simple_Button
                         if (match.Success)
                         {
                             System.Diagnostics.Debug.WriteLine("Matched line: " + line);
-                            //DateTime renderTime = DateTime.ParseExact(match.Groups[1].Value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
                             DateTime renderTime = DateTime.Parse(match.Groups[1].Value);
-                            //if (renderTime > lastRenderTime)
-                            //{
-                            //    renderTimes.Add(match.Groups[2].Value);                                
-                            //    datetimeFromLog.Add(renderTime.ToString());
-                            //}
-                            ////save datetime as string 
-                            ////System.Diagnostics.Debug.WriteLine("Added date time: " + match.Groups[1].Value);
+
                             if (renderTime > lastRenderTime)
                             {
                                 renderTimes.Add(match.Groups[2].Value);
@@ -1020,10 +1026,10 @@ namespace Simple_Button
                         }
                     }
                 }
-            }            
+            }
             catch (IOException e)
             {
-                System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);               
+                System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);
             }
 
             System.Diagnostics.Debug.WriteLine("datetimeFromLog: " + string.Join(",", datetimeFromLog));
@@ -1031,7 +1037,61 @@ namespace Simple_Button
             return Tuple.Create(datetimeFromLog, renderTimes);
 
         }
-        
+        //private Tuple<List<string>, List<string>> ExtractRenderTime(string lastRow)
+        //{
+        //    var renderLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtoyRndrNetwork", "rndr_log.txt");
+        //    string pattern = @"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*(render time [\d.]+)";
+        //    DateTime lastRenderTime;
+        //    if (string.IsNullOrEmpty(lastRow))
+        //    {
+        //        lastRenderTime = DateTime.ParseExact("2000-01-01 00:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        //    }
+        //    else
+        //    {
+        //        string[] formats = { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd H:mm:ss" };
+        //        if (!DateTime.TryParseExact(lastRow, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out lastRenderTime))
+        //        {
+        //            // handle the error
+        //        }
+        //    }
+        //    List<string> renderTimes = new List<string>();
+        //    List<string> datetimeFromLog = new List<string>(); //initialize variable
+        //    try
+        //    {
+        //        using (var stream = new FileStream(renderLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        //        {
+        //            stream.Seek(stream.Length, SeekOrigin.Begin); // Go to the end of the file
+        //            using (var reader = new StreamReader(stream))
+        //            {
+        //                string line;
+        //                while ((line = reader.ReadLine()) != null)
+        //                {
+        //                    Match match = Regex.Match(line, pattern);
+        //                    if (match.Success)
+        //                    {
+        //                        System.Diagnostics.Debug.WriteLine("Matched line: " + line);
+        //                        DateTime renderTime = DateTime.Parse(match.Groups[1].Value);
+        //                        if (renderTime > lastRenderTime)
+        //                        {
+        //                            renderTimes.Add(Regex.Replace(match.Groups[2].Value, @"render time ", ""));
+        //                            datetimeFromLog.Add(renderTime.ToString());
+        //                            //System.Diagnostics.Debug.WriteLine("Added render time: " + match.Groups[2].Value);
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (IOException e)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("An error occurred: " + e.Message);
+        //    }
+
+        //    System.Diagnostics.Debug.WriteLine("datetimeFromLog: " + string.Join(",", datetimeFromLog));
+        //    System.Diagnostics.Debug.WriteLine("renderTimes: " + string.Join(",", renderTimes));
+        //    return Tuple.Create(datetimeFromLog, renderTimes);
+        //}
+
         private void AddRenderTime(List<string> datetimeFromLog, List<string> renderTimes, string spreadsheetId, string sheetName)
         {
             // Create a new instance of the Sheets API service
@@ -1180,9 +1240,10 @@ namespace Simple_Button
 
         private void checkBox2_CheckedChanged(object sender, EventArgs e)
         {
+            RetrieveRegistryValues();
             Properties.Settings.Default.AutoSheet = checkBox2.Checked;
             Properties.Settings.Default.Save();
-            int minutes = 310; // 12 hours is 720 min etc
+            int minutes = GsheetTimer; // 310; // 12 hours is 720 min etc
 
             if (checkBox2.Checked && !isTimerCreated)
             {
