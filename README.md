@@ -1,6 +1,7 @@
 # Gpu-Monitor
-![image](https://user-images.githubusercontent.com/35293441/214382220-1883577c-f717-4c53-a33f-889619828749.png)
-![image](https://user-images.githubusercontent.com/35293441/213907017-2e80262b-d385-41a9-9bf4-5f4398326cb9.png)
+![image](https://user-images.githubusercontent.com/35293441/216568410-b67eea87-6a5b-4717-974c-1bf205e0fac9.png)
+![image](https://user-images.githubusercontent.com/35293441/216576629-9c4b8110-684e-4cde-b255-9ba97efe952c.png)
+
 
 
 REQUIREMENTS:
@@ -15,24 +16,33 @@ Starts the GPU check. Uses the settings you provide in the Settings Dialog.
 This checks number of GPU's. 
 If there is 3 or less GPU with high GPU load and the rest are lowload (80% or less). It triggers a Double-Check. If it is still in this state, it sends a mail.
 
-Stop Check  
+Stop Check   
 What do you think? its Stops the check..
 
-Test Mail
-
+Test Mail  
 Test mail sending with the settings you provide in the Settings dialog.
 
-AutoStart
+Rndr Log  
+Opens the Rndr_log file.
 
+Rndr Wiki  
+Opens the Wiki
+
+Kill RndrClient  
+Kills the Render Client 
+
+Gsheet
+![image](https://user-images.githubusercontent.com/35293441/216578403-4ecb6f06-8c31-4075-ba4f-57b9075a1868.png)
+Creates a Google spreadsheet and adds or updates a sheet with current computername. Also adds default formulas and headers.
+You need a credential.json file in the GPU-Monitor.exe folder.  
+  Not done with a guide for this yet, google how to setup a service account and get a credential.json :)  
+
+![image](https://user-images.githubusercontent.com/35293441/216570766-f50104b9-4c9a-43e1-b38f-5e1f238004fb.png)  
+Auto Gsheet  
+Auto uploads to the sheet based on the Gsheet Timer you set (minutes)
+
+AutoCheck  
 If you check this, Start Check will be triggered automatically when the Program starts.
-
-Rndr Log
-
-Not Implemented yet- Creates a Google Spreadsheet (Rndr-Stats), with a Sheet name that uses current computer name.
-Append data to it from the rndr_log based on settings. Then you can create graphs or whatever you want in another sheet base on that data.
-A lot to do here you need to provide your own credentials file so it can talk to YOUR google cloud. Easy instruction will be made when done.
-
-![image](https://user-images.githubusercontent.com/35293441/213871142-44414a3d-c821-436e-a00a-ee799e46bbf3.png)
 
 
 PS. I am a noob , do not look at the code to hard or your brain will explode...
