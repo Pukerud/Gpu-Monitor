@@ -730,8 +730,9 @@ namespace Simple_Button
             if (!computerNameExists)
             {
                 // If the current computer name does not exist, add it to the first empty cell on row E, after row E4.
-                AddComputerName(sheetsService, spreadsheetId, sheetName, 5);
+                AddComputerName(sheetsService, spreadsheetId, sheetName, 5);                
             }
+            AddComputerScore(sheetsService, spreadsheetId, sheetName, 5);
             System.Diagnostics.Debug.WriteLine("Computername exist done");
             //Add Text to Sheet Stats
             AddValuesToCells(sheetsService, spreadsheetId);
@@ -798,20 +799,34 @@ namespace Simple_Button
 
                 if (values == null || values[0][0].ToString() == "")
                 {
-                    var valuesToInsert = new List<IList<Object>>
-            {
-                new List<Object> {"Today"},
-                new List<Object> {"Seconds", "Minutes", "Hours", "Yesterday (h)", "Last Week(h)", "Last Render"}
-            };
+                    var valuesToInsert1 = new List<IList<Object>>
+                    {
+                      new List<Object> {"Today"}
+                    };
 
-                    var updateRequest = sheetsService.Spreadsheets.Values.Update(new ValueRange
+                    var updateRequest1 = sheetsService.Spreadsheets.Values.Update(new ValueRange
                     {
                         MajorDimension = "ROWS",
-                        Range = "Stats!F3:K4",
-                        Values = valuesToInsert
-                    }, spreadsheetId, "Stats!F3:K4");
-                    updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-                    updateRequest.Execute();
+                        Range = "Stats!F3",
+                        Values = valuesToInsert1
+                    }, spreadsheetId, "Stats!F3");
+                    updateRequest1.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                    updateRequest1.Execute();
+
+                    var valuesToInsert2 = new List<IList<Object>>
+                    {
+                      new List<Object> {"OB-Score", "ComputerName", "Seconds", "Minutes", "Hours", "Yesterday (h)", "Last Week(h)", "Last Render"}
+                    };
+
+                    var updateRequest2 = sheetsService.Spreadsheets.Values.Update(new ValueRange
+                    {
+                        MajorDimension = "ROWS",
+                        Range = "Stats!D4:K4",
+                        Values = valuesToInsert2
+                    }, spreadsheetId, "Stats!D4:K4");
+                    updateRequest2.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                    updateRequest2.Execute();
+
                 }
 
                 return true;
@@ -911,6 +926,54 @@ namespace Simple_Button
                 return false;
             }
         }
+        private static void AddComputerScore(SheetsService sheetsService, string spreadsheetId, string computerName, int column)
+        {
+            int row = GetComputerNameRow(sheetsService, spreadsheetId, computerName, column);
+
+            if (row == -1)
+            {
+                // Computer name not found, return
+                return;
+            }
+
+            string score = (string)Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Software\\OTOY", "SCORE", null);
+            if (score == null)
+            {
+                score = "N/A";
+            }
+
+            var range = $"Stats!D{row}";
+            var valueRange = new ValueRange
+            {
+                Values = new List<IList<object>> { new List<object> { score } }
+            };
+            var updateRequest = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
+            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            updateRequest.Execute();
+        }
+
+        private static int GetComputerNameRow(SheetsService sheetsService, string spreadsheetId, string computerName, int column)
+        {
+            var range = $"Stats!E:E";
+            var response = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range).Execute();
+            var values = response.Values;
+
+            if (values == null || values.Count == 0)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (values[i].Count > 0 && values[i][0].ToString() == computerName)
+                {
+                    return i ;
+                }
+            }
+
+            return -1;
+        }
+
 
         private static void AddComputerName(SheetsService sheetsService, string spreadsheetId, string computerName, int column)
         {
